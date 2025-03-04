@@ -12,7 +12,10 @@ import {
   IDropdownSelectButtonOption,
 } from '../dropdown-select-button'
 import { getMergeOptions, updateRebasePreview } from '../lib/update-branch'
-import { MultiCommitOperationKind } from '../../models/multi-commit-operation'
+import {
+  MultiCommitOperationKind,
+  isIdMultiCommitOperation,
+} from '../../models/multi-commit-operation'
 import { RebasePreview } from '../../models/rebase'
 
 interface IMergeCallToActionWithConflictsProps {
@@ -55,7 +58,7 @@ export class MergeCallToActionWithConflicts extends React.Component<
     if (selectedOperation === MultiCommitOperationKind.Rebase) {
       return rebasePreview !== null &&
         rebasePreview.kind === ComputedAction.Clean
-        ? rebasePreview.commits.length
+        ? rebasePreview.commitsAhead.length
         : 0
     }
 
@@ -96,24 +99,29 @@ export class MergeCallToActionWithConflicts extends React.Component<
     })
   }
 
-  private onOperationChange = (
-    option: IDropdownSelectButtonOption<MultiCommitOperationKind>
-  ) => {
-    this.setState({ selectedOperation: option.value })
-    if (option.value === MultiCommitOperationKind.Rebase) {
+  private onOperationChange = (option: IDropdownSelectButtonOption) => {
+    if (!isIdMultiCommitOperation(option.id)) {
+      return
+    }
+
+    this.setState({ selectedOperation: option.id })
+    if (option.id === MultiCommitOperationKind.Rebase) {
       this.updateRebasePreview(this.props.comparisonBranch)
     }
   }
 
   private onOperationInvoked = async (
     event: React.MouseEvent<HTMLButtonElement>,
-    selectedOption: IDropdownSelectButtonOption<MultiCommitOperationKind>
+    selectedOption: IDropdownSelectButtonOption
   ) => {
+    if (!isIdMultiCommitOperation(selectedOption.id)) {
+      return
+    }
     event.preventDefault()
 
     const { dispatcher, repository } = this.props
 
-    await this.dispatchOperation(selectedOption.value)
+    await this.dispatchOperation(selectedOption.id)
 
     dispatcher.executeCompare(repository, {
       kind: HistoryTabMode.History,
@@ -140,7 +148,7 @@ export class MergeCallToActionWithConflicts extends React.Component<
       const commits =
         this.state.rebasePreview !== null &&
         this.state.rebasePreview.kind === ComputedAction.Clean
-          ? this.state.rebasePreview.commits
+          ? this.state.rebasePreview.commitsAhead
           : []
       return dispatcher.startRebase(
         repository,
@@ -162,7 +170,7 @@ export class MergeCallToActionWithConflicts extends React.Component<
       [],
       currentBranch.tip.sha
     )
-    dispatcher.recordCompareInitiatedMerge()
+    dispatcher.incrementMetric('mergesInitiatedFromComparison')
 
     return dispatcher.mergeBranch(
       repository,
@@ -181,10 +189,11 @@ export class MergeCallToActionWithConflicts extends React.Component<
         {mergeDetails}
 
         <DropdownSelectButton
-          selectedValue={this.state.selectedOperation}
+          checkedOption={this.state.selectedOperation}
           options={getMergeOptions()}
+          dropdownAriaLabel="Merge options"
           disabled={disabled}
-          onSelectChange={this.onOperationChange}
+          onCheckedOptionChange={this.onOperationChange}
           onSubmit={this.onOperationInvoked}
         />
       </div>

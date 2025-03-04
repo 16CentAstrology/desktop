@@ -2,8 +2,8 @@ import * as React from 'react'
 import { Dialog, DialogContent, DialogFooter } from '../dialog'
 import { Row } from '../lib/row'
 import { OkCancelButtonGroup } from '../dialog/ok-cancel-button-group'
-import { TextBox } from '../lib/text-box'
 import { Checkbox, CheckboxValue } from '../lib/checkbox'
+import { PasswordTextBox } from '../lib/password-text-box'
 
 interface ISSHUserPasswordProps {
   readonly username: string
@@ -37,16 +37,15 @@ export class SSHUserPassword extends React.Component<
         id="ssh-user-password"
         type="normal"
         title="SSH User Password"
-        dismissable={false}
+        backdropDismissable={false}
         onSubmit={this.onSubmit}
-        onDismissed={this.props.onDismissed}
+        onDismissed={this.onCancel}
       >
         <DialogContent>
           <Row>
-            <TextBox
+            <PasswordTextBox
               label={`Enter password for '${this.props.username}':`}
               value={this.state.password}
-              type="password"
               onValueChanged={this.onValueChanged}
             />
           </Row>

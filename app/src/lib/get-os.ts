@@ -27,7 +27,7 @@ function systemVersionLessThan(version: string) {
 }
 
 /** Get the OS we're currently running on. */
-export function getOS() {
+export function getOS(): string {
   const version = getSystemVersionSafe()
   if (__DARWIN__) {
     return `Mac OS ${version}`
@@ -37,6 +37,35 @@ export function getOS() {
     return `${OS.type()} ${version}`
   }
 }
+
+/** We're currently running macOS and it is macOS Ventura. */
+export const isMacOSVentura = memoizeOne(
+  () =>
+    __DARWIN__ &&
+    systemVersionGreaterThanOrEqualTo('13.0') &&
+    systemVersionLessThan('14.0')
+)
+
+/** We're currently running macOS and it is macOS Sonoma. */
+export const isMacOSSonoma = memoizeOne(
+  () =>
+    __DARWIN__ &&
+    systemVersionGreaterThanOrEqualTo('14.0') &&
+    systemVersionLessThan('15.0')
+)
+
+/** We're currently running macOS and it is macOS Sequoia. */
+export const isMacOSSequoia = memoizeOne(
+  () =>
+    __DARWIN__ &&
+    systemVersionGreaterThanOrEqualTo('15.0') &&
+    systemVersionLessThan('16.0')
+)
+
+/** We're currently running macOS and it is macOS Sonoma or later. */
+export const isMacOSSonomaOrLater = memoizeOne(
+  () => __DARWIN__ && systemVersionGreaterThanOrEqualTo('14.0')
+)
 
 /** We're currently running macOS and it is macOS Catalina or earlier. */
 export const isMacOSCatalinaOrEarlier = memoizeOne(
@@ -58,4 +87,18 @@ export const isMacOSBigSurOrLater = memoizeOne(
 /** We're currently running Windows 10 and it is at least 1809 Preview Build 17666. */
 export const isWindows10And1809Preview17666OrLater = memoizeOne(
   () => __WIN32__ && systemVersionGreaterThanOrEqualTo('10.0.17666')
+)
+
+export const isWindowsAndNoLongerSupportedByElectron = memoizeOne(
+  () => __WIN32__ && systemVersionLessThan('10')
+)
+
+export const isMacOSAndNoLongerSupportedByElectron = memoizeOne(
+  () => __DARWIN__ && systemVersionLessThan('11.0')
+)
+
+export const isOSNoLongerSupportedByElectron = memoizeOne(
+  () =>
+    isMacOSAndNoLongerSupportedByElectron() ||
+    isWindowsAndNoLongerSupportedByElectron()
 )

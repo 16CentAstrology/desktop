@@ -4,12 +4,18 @@ import { Branch } from '../../models/branch'
 import { ClickSource } from '../lib/list'
 import { PopoverDropdown } from '../lib/popover-dropdown'
 import { BranchList } from './branch-list'
-import { renderDefaultBranch } from './branch-renderer'
+import {
+  getDefaultAriaLabelForBranch,
+  renderDefaultBranch,
+} from './branch-renderer'
 import { IBranchListItem } from './group-branches'
+import { Repository } from '../../models/repository'
 
 interface IBranchSelectProps {
+  readonly repository: Repository
+
   /** The initially selected branch. */
-  readonly branch: Branch
+  readonly branch: Branch | null
 
   /**
    * See IBranchesState.defaultBranch
@@ -33,6 +39,9 @@ interface IBranchSelectProps {
 
   /** Called when the user changes the selected branch. */
   readonly onChange?: (branch: Branch) => void
+
+  /** Optional: No branches message */
+  readonly noBranchesMessage?: string | JSX.Element
 }
 
 interface IBranchSelectState {
@@ -58,8 +67,24 @@ export class BranchSelect extends React.Component<
     }
   }
 
-  private renderBranch = (item: IBranchListItem, matches: IMatches) => {
-    return renderDefaultBranch(item, matches, this.props.currentBranch)
+  private renderBranch = (
+    item: IBranchListItem,
+    matches: IMatches,
+    authorDate: Date | undefined
+  ) => {
+    return renderDefaultBranch(
+      item,
+      matches,
+      this.props.currentBranch,
+      authorDate
+    )
+  }
+
+  private getBranchAriaLabel = (
+    item: IBranchListItem,
+    authorDate: Date | undefined
+  ): string => {
+    return getDefaultAriaLabelForBranch(item, authorDate)
   }
 
   private onItemClick = (branch: Branch, source: ClickSource) => {
@@ -74,8 +99,13 @@ export class BranchSelect extends React.Component<
   }
 
   public render() {
-    const { currentBranch, defaultBranch, recentBranches, allBranches } =
-      this.props
+    const {
+      currentBranch,
+      defaultBranch,
+      recentBranches,
+      allBranches,
+      noBranchesMessage,
+    } = this.props
 
     const { filterText, selectedBranch } = this.state
 
@@ -87,6 +117,7 @@ export class BranchSelect extends React.Component<
         ref={this.popoverRef}
       >
         <BranchList
+          repository={this.props.repository}
           allBranches={allBranches}
           currentBranch={currentBranch}
           defaultBranch={defaultBranch}
@@ -96,7 +127,9 @@ export class BranchSelect extends React.Component<
           selectedBranch={selectedBranch}
           canCreateNewBranch={false}
           renderBranch={this.renderBranch}
+          getBranchAriaLabel={this.getBranchAriaLabel}
           onItemClick={this.onItemClick}
+          noBranchesMessage={noBranchesMessage}
         />
       </PopoverDropdown>
     )

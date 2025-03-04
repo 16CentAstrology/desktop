@@ -1,4 +1,4 @@
-import { git, IGitExecutionOptions, gitNetworkArguments } from './core'
+import { git, IGitStringExecutionOptions } from './core'
 import { ICloneProgress } from '../../models/progress'
 import { CloneOptions } from '../../models/clone-options'
 import { CloneProgressParser, executionOptionsWithProgress } from '../progress'
@@ -23,7 +23,6 @@ import { envForRemoteOperation } from './environment'
  *                           of the clone operation. When provided this enables
  *                           the '--progress' command line flag for
  *                           'git clone'.
- *
  */
 export async function clone(
   url: string,
@@ -31,19 +30,21 @@ export async function clone(
   options: CloneOptions,
   progressCallback?: (progress: ICloneProgress) => void
 ): Promise<void> {
-  const env = await envForRemoteOperation(options.account, url)
+  const env = {
+    ...(await envForRemoteOperation(url)),
+    GIT_CLONE_PROTECTION_ACTIVE: 'false',
+  }
 
   const defaultBranch = options.defaultBranch ?? (await getDefaultBranch())
 
   const args = [
-    ...gitNetworkArguments(),
     '-c',
     `init.defaultBranch=${defaultBranch}`,
     'clone',
     '--recursive',
   ]
 
-  let opts: IGitExecutionOptions = { env }
+  let opts: IGitStringExecutionOptions = { env }
 
   if (progressCallback) {
     args.push('--progress')

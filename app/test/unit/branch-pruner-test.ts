@@ -6,7 +6,7 @@ import { RepositoryStateCache } from '../../src/lib/stores/repository-state-cach
 import { setupFixtureRepository } from '../helpers/repositories'
 import { shell } from '../helpers/test-app-shell'
 import { TestRepositoriesDatabase } from '../helpers/databases'
-import { GitProcess } from 'dugite'
+import { exec } from 'dugite'
 import {
   createRepository as createPrunedRepository,
   setupRepository,
@@ -16,6 +16,7 @@ import { UiActivityMonitor } from '../../src/ui/lib/ui-activity-monitor'
 import { offsetFromNow } from '../../src/lib/offset-from'
 import * as FSE from 'fs-extra'
 import * as path from 'path'
+import { fakePost } from '../fake-stats-post'
 
 describe('BranchPruner', () => {
   const onGitStoreUpdated = () => {}
@@ -24,12 +25,12 @@ describe('BranchPruner', () => {
   let gitStoreCache: GitStoreCache
   let repositoriesStore: RepositoriesStore
   let repositoriesStateCache: RepositoryStateCache
-  let onPruneCompleted: jest.Mock<(repository: Repository) => Promise<void>>
 
   beforeEach(async () => {
     const statsStore = new StatsStore(
       new StatsDatabase('test-StatsDatabase'),
-      new UiActivityMonitor()
+      new UiActivityMonitor(),
+      fakePost
     )
     gitStoreCache = new GitStoreCache(
       shell,
@@ -42,9 +43,6 @@ describe('BranchPruner', () => {
     await repositoriesDb.reset()
     repositoriesStore = new RepositoriesStore(repositoriesDb)
     repositoriesStateCache = new RepositoryStateCache(statsStore)
-    onPruneCompleted = jest.fn(() => (_: Repository) => {
-      return Promise.resolve()
-    })
   })
 
   it('does nothing on non GitHub repositories', async () => {
@@ -63,7 +61,7 @@ describe('BranchPruner', () => {
       gitStoreCache,
       repositoriesStore,
       repositoriesStateCache,
-      onPruneCompleted
+      () => Promise.resolve()
     )
 
     const branchesBeforePruning = await getBranchesFromGit(repo)
@@ -90,7 +88,7 @@ describe('BranchPruner', () => {
       gitStoreCache,
       repositoriesStore,
       repositoriesStateCache,
-      onPruneCompleted
+      () => Promise.resolve()
     )
 
     await branchPruner.start()
@@ -116,7 +114,7 @@ describe('BranchPruner', () => {
       gitStoreCache,
       repositoriesStore,
       repositoriesStateCache,
-      onPruneCompleted
+      () => Promise.resolve()
     )
 
     const branchesBeforePruning = await getBranchesFromGit(repo)
@@ -144,7 +142,7 @@ describe('BranchPruner', () => {
       gitStoreCache,
       repositoriesStore,
       repositoriesStateCache,
-      onPruneCompleted
+      () => Promise.resolve()
     )
 
     const branchesBeforePruning = await getBranchesFromGit(repo)
@@ -171,7 +169,7 @@ describe('BranchPruner', () => {
       gitStoreCache,
       repositoriesStore,
       repositoriesStateCache,
-      onPruneCompleted
+      () => Promise.resolve()
     )
 
     await branchPruner.start()
@@ -212,7 +210,7 @@ describe('BranchPruner', () => {
       gitStoreCache,
       repositoriesStore,
       repositoriesStateCache,
-      onPruneCompleted
+      () => Promise.resolve()
     )
 
     await branchPruner.start()
@@ -224,7 +222,7 @@ describe('BranchPruner', () => {
 })
 
 async function getBranchesFromGit(repository: Repository) {
-  const gitOutput = await GitProcess.exec(['branch'], repository.path)
+  const gitOutput = await exec(['branch'], repository.path)
   return gitOutput.stdout
     .split('\n')
     .filter(s => s.length > 0)

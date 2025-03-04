@@ -9,8 +9,7 @@ import {
   CommittedFileChange,
 } from '../../models/status'
 import { DiffHunk, DiffHunkExpansionType } from '../../models/diff/raw-diff'
-import { DiffLineType } from '../../models/diff'
-import { DiffSyntaxToken } from './diff-syntax-mode'
+import { DiffLineType, ILargeTextDiff, ITextDiff } from '../../models/diff'
 
 /**
  * DiffRowType defines the different types of
@@ -206,6 +205,21 @@ export type SimplifiedDiffRow =
   | IDiffRowHunk
 
 export type ChangedFile = WorkingDirectoryFileChange | CommittedFileChange
+
+/**
+ * Whether the row is a type that represent a change (added, deleted, modified)
+ * in the diff. This is useful for checking to see if a row type would have
+ * something like 'hunkStartLine` on it.
+ */
+export function isRowChanged(
+  row: DiffRow | SimplifiedDiffRow
+): row is IDiffRowAdded | IDiffRowDeleted | IDiffRowModified {
+  return (
+    row.type === DiffRowType.Added ||
+    row.type === DiffRowType.Deleted ||
+    row.type === DiffRowType.Modified
+  )
+}
 
 /**
  * Returns an object with two ILineTokens objects that can be used to highlight
@@ -429,28 +443,37 @@ export function getFirstAndLastClassesSideBySide(
 }
 
 /**
- * Used to obtain classes applied to style the row if it is the first or last of
- * a group of added, deleted, or modified rows in the unified diff.
- **/
-export function getFirstAndLastClassesUnified(
-  token: DiffSyntaxToken,
-  prevToken: DiffSyntaxToken | undefined,
-  nextToken: DiffSyntaxToken | undefined
-): string[] {
-  const addedOrDeletedTokens = [DiffSyntaxToken.Add, DiffSyntaxToken.Delete]
-  if (!addedOrDeletedTokens.includes(token)) {
-    return []
+ * Compares two text diffs for structural equality.
+ *
+ * Components needing to know whether a re-render is necessary after receiving
+ * a diff is the intended use case.
+ */
+export function textDiffEquals(
+  x: ITextDiff | ILargeTextDiff,
+  y: ITextDiff | ILargeTextDiff
+) {
+  if (x === y) {
+    return true
   }
 
-  const classNames = []
-
-  if (prevToken !== token) {
-    classNames.push('is-first')
+  if (
+    x.text === y.text &&
+    x.kind === y.kind &&
+    x.hasHiddenBidiChars === y.hasHiddenBidiChars &&
+    x.lineEndingsChange === y.lineEndingsChange &&
+    x.hunks.length === y.hunks.length
+  ) {
+    // This is a performance optimization which lets us avoid iterating over all
+    // lines (deep equality on all hunks). We're already comparing the diff text
+    // above so the only thing that can change with the diff text staying the
+    // same is whether or not the last line is followed by a trailing newline.
+    // That information is encodeded in the noTrailingNewLine property which
+    // exists on all lines but is only ever set on lines in the last hunk
+    return (
+      x.hunks.length === 0 ||
+      x.hunks[x.hunks.length - 1].equals(y.hunks[y.hunks.length - 1])
+    )
   }
 
-  if (nextToken !== token) {
-    classNames.push('is-last')
-  }
-
-  return classNames
+  return false
 }

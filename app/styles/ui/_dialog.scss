@@ -1,7 +1,5 @@
 @import '../mixins';
-@import 'dialogs/merge';
 @import 'dialogs/conflicts';
-@import 'dialogs/rebase';
 @import 'dialogs/progress-dialog';
 @import 'dialogs/abort-merge';
 @import 'dialogs/push-needs-pull';
@@ -22,6 +20,10 @@
 @import 'dialogs/unreachable-commits';
 @import 'dialogs/open-pull-request';
 @import 'dialogs/installing-update';
+@import 'dialogs/test-notifications';
+@import 'dialogs/pull-request-comment-like';
+@import 'dialogs/unknown-authors';
+@import 'dialogs/icon_preview';
 
 // The styles herein attempt to follow a flow where margins are only applied
 // to the bottom of elements (with the exception of the last child). This to
@@ -32,6 +34,7 @@ dialog {
   flex-direction: column;
 
   overflow: unset;
+
   // These are the 24px versions of the alert and stop octicons
   // from oction v10.0.0
   //
@@ -129,6 +132,10 @@ dialog {
     opacity: 1;
   }
 
+  &:not([open]) {
+    display: none;
+  }
+
   // The dialog embeds a fieldset as the first child of the form element
   // in order to be able to disable all form elements and buttons in one
   // swoop. This resets all styles for that fieldset.
@@ -207,7 +214,7 @@ dialog {
       }
 
       &:focus {
-        outline: 0;
+        outline-offset: 3px;
       }
     }
     @include close-button;
@@ -338,9 +345,9 @@ dialog {
     }
   }
 
-  // Inline error component rendered at the top of the dialog just below
+  // Dialog banner components rendered at the top of the dialog just below
   // the header (if the dialog has one).
-  .dialog-error {
+  .dialog-banner {
     display: flex;
     padding: var(--spacing);
     align-items: center;
@@ -349,10 +356,6 @@ dialog {
     // of the error of indicate nested errors. We want to preserve these
     // while still forcing line breaks if necessary.
     white-space: pre-wrap;
-
-    background: var(--form-error-background);
-    border-bottom: 1px solid var(--form-error-border-color);
-    color: var(--form-error-text-color);
 
     > .octicon {
       flex-grow: 0;
@@ -363,6 +366,20 @@ dialog {
     div {
       overflow-wrap: break-word;
       overflow-x: hidden;
+    }
+
+    &.dialog-error {
+      color: var(--form-error-text-color);
+      background: var(--form-error-background);
+      border-bottom: 1px solid var(--form-error-border-color);
+      border-top: 1px solid var(--form-error-border-color);
+    }
+
+    &.dialog-success {
+      color: var(--dialog-banner-success-text-color);
+      background: var(--dialog-banner-success-background);
+      border-top: 1px solid var(--dialog-banner-success-border-color);
+      border-bottom: 1px solid var(--dialog-banner-success-border-color);
     }
   }
 
@@ -395,15 +412,163 @@ dialog {
     }
   }
 
+  // The following media queries ensure that the dialog content is accessible
+  // when zoomed in
+  @media (max-height: 550px) {
+    .dialog-content,
+    .tab-bar,
+    .tab-container {
+      overflow-y: auto;
+      max-height: calc(100vh - 150px) !important;
+    }
+
+    &#publish-repository {
+      .dialog-content {
+        max-height: calc(100vh - 175px);
+      }
+    }
+
+    &#repository-settings,
+    &#preferences {
+      .dialog-content {
+        min-height: calc(100vh - 150px) !important;
+      }
+    }
+
+    &#choose-branch {
+      .dialog-content {
+        overflow-y: unset;
+        max-height: calc(100vh - 194px);
+      }
+      .filter-list-container {
+        overflow-y: auto;
+        max-height: calc(100vh - 230px);
+      }
+      .branches-list {
+        height: calc(100vh - 194px);
+      }
+    }
+
+    &.clone-repository {
+      .dialog-header,
+      .dialog-footer {
+        padding-top: var(--spacing);
+        padding-bottom: var(--spacing);
+      }
+
+      .dialog-content {
+        overflow-y: unset;
+        min-height: calc(100vh - 158px);
+
+        .row-component {
+          margin-bottom: 0px;
+        }
+
+        .local-path-field {
+          padding-top: var(--spacing);
+          padding-bottom: var(--spacing);
+        }
+
+        .clone-github-repo {
+          height: calc(100vh - 225px);
+          max-height: unset;
+        }
+      }
+    }
+
+    &#pull-request-checks-failed {
+      .dialog-content {
+        overflow-y: unset;
+        min-height: unset;
+
+        .ci-check-run-dialog-container {
+          height: calc(100vh - 225px);
+          max-height: unset;
+        }
+      }
+
+      .dialog-header,
+      .dialog-footer {
+        padding-top: var(--spacing);
+        padding-bottom: var(--spacing);
+      }
+
+      .dialog-footer {
+        > .row-component {
+          display: block;
+          .footer-question {
+            margin-bottom: var(--spacing);
+          }
+        }
+      }
+    }
+
+    &.open-pull-request {
+      max-height: calc(100vh - var(--spacing-double));
+
+      .open-pull-request-content {
+        overflow-y: auto;
+        min-height: calc(100vh - 250px);
+        padding: 0;
+
+        .pull-request-files-changed {
+          border: none;
+          border-radius: unset;
+        }
+      }
+
+      .dialog-header,
+      .dialog-footer {
+        padding-top: var(--spacing);
+        padding-bottom: var(--spacing);
+      }
+    }
+
+    &#release-notes {
+      .dialog-content {
+        max-height: calc(100vh - 200px) !important;
+      }
+    }
+  }
+
+  @media (max-width: 600px) {
+    min-width: calc(100% - var(--spacing-double)) !important;
+    max-width: calc(100% - var(--spacing-double)) !important;
+
+    &#release-notes {
+      .container {
+        flex-direction: column;
+      }
+    }
+  }
+
   &#preferences {
     width: 600px;
+
+    .dialog-content {
+      $default-tab-height: 430px;
+      min-height: $default-tab-height;
+
+      &.accounts-tab {
+        max-height: $default-tab-height;
+        overflow: auto;
+      }
+    }
   }
+
   &#about {
     width: 450px;
   }
+
   &#create-repository {
     width: 400px;
+
+    #create-repo-path-msg {
+      margin-bottom: var(--spacing);
+      margin-top: calc(-1 * var(--spacing));
+    }
   }
+
   &#create-branch {
     width: 400px;
     .link-button-component {
@@ -435,6 +600,11 @@ dialog {
     .description {
       color: var(--text-secondary-color);
       font-size: var(--font-size-sm);
+      margin-bottom: var(--spacing);
+
+      p {
+        margin: 0;
+      }
     }
   }
 
@@ -447,6 +617,12 @@ dialog {
 
       .button-component {
         width: 100%;
+      }
+    }
+
+    .existing-account-warning {
+      .ref-component {
+        word-break: break-word;
       }
     }
 
@@ -474,7 +650,7 @@ dialog {
   }
 
   &#pull-request-checks-failed {
-    max-width: none;
+    max-width: calc(100% - var(--spacing-double));
     width: 910px;
   }
 

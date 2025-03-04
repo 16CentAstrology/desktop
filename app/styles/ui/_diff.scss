@@ -104,7 +104,6 @@
   }
 
   .popover-component.whitespace-hint {
-    position: absolute;
     width: 225px;
   }
 }
@@ -131,31 +130,37 @@
     top: 0;
   }
 
-  .hunk-expand-up-handle {
-    position: absolute;
-    height: 50%;
-    width: 100%;
-    right: 0;
-    bottom: 0;
-    text-align: center;
-  }
+  .hunk-expander {
+    overflow: inherit;
+    text-overflow: inherit;
+    white-space: inherit;
+    font-family: inherit;
+    font-size: inherit;
+    padding: inherit;
+    border: none;
+    height: inherit;
+    color: inherit;
+    background-color: inherit;
 
-  .hunk-expand-down-handle {
     position: absolute;
-    height: 50%;
-    width: 100%;
     right: 0;
-    top: 0;
+    width: 100%;
     text-align: center;
-  }
 
-  .hunk-expand-whole-handle {
-    position: absolute;
-    height: 100%;
-    width: 100%;
-    right: 0;
-    bottom: 0;
-    text-align: center;
+    &.hunk-expand-up-handle {
+      height: 50%;
+      bottom: 0;
+    }
+
+    &.hunk-expand-down-handle {
+      height: 50%;
+      top: 0;
+    }
+
+    &.hunk-expand-whole-handle {
+      height: 100%;
+      bottom: 0;
+    }
   }
 
   &:not(.includeable) {
@@ -275,39 +280,10 @@
 .CodeMirror-linebackground {
   &.diff-add {
     background: var(--diff-add-background-color);
-
-    @include high-contrast {
-      border-right: var(--hc-diff-add-border);
-      border-left: var(--hc-diff-add-border);
-      margin-top: 1px;
-
-      &.is-first {
-        margin-top: 1px;
-        border-top: var(--hc-diff-add-border);
-      }
-
-      &.is-last {
-        border-bottom: var(--hc-diff-add-border);
-      }
-    }
   }
 
   &.diff-delete {
     background: var(--diff-delete-background-color);
-
-    @include high-contrast {
-      border-right: var(--hc-diff-delete-border);
-      border-left: var(--hc-diff-delete-border);
-
-      &.is-first {
-        margin-top: 1px;
-        border-top: var(--hc-diff-delete-border);
-      }
-
-      &.is-last {
-        border-bottom: var(--hc-diff-delete-border);
-      }
-    }
   }
 
   &.diff-context {
@@ -707,6 +683,10 @@
     color: inherit;
   }
 
+  .cm-quote {
+    color: var(--syntax-quote-color);
+  }
+
   .cm-variable-2,
   .cm-variable-3 {
     color: var(--syntax-alt-variable-color);
@@ -752,6 +732,12 @@
     color: var(--syntax-header-color);
   }
 
+  .cm-m-cmake {
+    &.cm-def {
+      color: var(--syntax-atom-color);
+    }
+  }
+
   .cm-m-css {
     &.cm-property {
       color: var(--syntax-atom-color);
@@ -767,6 +753,12 @@
   .cm-m-javascript {
     &.cm-type {
       color: var(--syntax-variable-color);
+    }
+  }
+
+  .cm-m-toml {
+    &.cm-string.cm-property {
+      color: var(--syntax-string-color);
     }
   }
 
@@ -788,6 +780,38 @@
   overflow: hidden;
   position: relative;
 
+  .panel {
+    padding-top: var(--spacing);
+
+    display: flex;
+    flex: 1;
+
+    &.empty,
+    &.renamed,
+    &.binary {
+      justify-content: center;
+      align-items: center;
+    }
+    &.large-diff {
+      margin: var(--spacing-double);
+      text-align: center;
+      justify-content: initial;
+
+      .blankslate-image {
+        max-height: 150px;
+      }
+
+      .description {
+        margin-top: var(--spacing);
+        margin-bottom: var(--spacing);
+
+        p {
+          margin: 0;
+        }
+      }
+    }
+  }
+
   .loading-indicator {
     position: absolute;
     top: 50%;
@@ -797,7 +821,7 @@
     pointer-events: none;
   }
 
-  .hidden-bidi-chars-warning {
+  .diff-contents-warning-container {
     background-color: var(--file-warning-background-color);
     padding: var(--spacing) var(--spacing-double);
     border-bottom: var(--file-warning-border-color) solid 1px;
@@ -810,6 +834,13 @@
 
     a.link-button-component {
       display: unset;
+    }
+
+    // Separate warning items
+    .diff-contents-warning:not(:last-child) {
+      margin-bottom: var(--spacing);
+      border-bottom: var(--file-warning-border-color) solid 1px;
+      padding-bottom: var(--spacing);
     }
   }
 
@@ -848,6 +879,64 @@
       & > :not(.loading-indicator) {
         opacity: 0.2;
       }
+    }
+  }
+
+  // When focus moves to the virtualized grid, we want to show a focus ring.
+  &:has(.ReactVirtualized__Grid:focus-visible) {
+    outline: 2px solid var(--focus-color);
+    border-radius: var(--border-radius);
+
+    // Move the content over to make room for the focus ring
+    margin-right: 2px;
+    margin-bottom: 2px;
+  }
+}
+
+.diff-container {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  min-width: 0;
+  max-height: 100%;
+
+  .header {
+    span {
+      user-select: text;
+    }
+
+    background: var(--box-alt-background-color);
+    border-bottom: 1px solid var(--diff-border-color);
+
+    display: flex;
+    flex-direction: row;
+    flex-shrink: 0;
+    flex-grow: 0;
+    align-items: center;
+
+    padding: var(--spacing-half) var(--spacing);
+
+    @include octicon-status;
+
+    .diff-options-component {
+      margin-right: var(--spacing-half);
+      flex-shrink: 0;
+    }
+
+    .octicon.status {
+      flex-shrink: 0;
+      vertical-align: text-bottom;
+      position: relative;
+      align-self: center;
+      flex-shrink: 0;
+    }
+
+    .line-endings {
+      margin-right: var(--spacing-half);
+    }
+
+    .open-merge-tool {
+      margin-right: var(--spacing-half);
     }
   }
 }

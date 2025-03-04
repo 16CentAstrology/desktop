@@ -1,11 +1,10 @@
 import * as React from 'react'
 import { Button } from './button'
-import { Popover, PopoverCaretPosition } from './popover'
+import { Popover, PopoverAnchorPosition, PopoverDecoration } from './popover'
 import { Octicon } from '../octicons'
-import * as OcticonSymbol from '../octicons/octicons.generated'
+import * as octicons from '../octicons/octicons.generated'
 import classNames from 'classnames'
 
-const defaultPopoverContentHeight = 300
 const maxPopoverContentHeight = 500
 
 interface IPopoverDropdownProps {
@@ -17,7 +16,6 @@ interface IPopoverDropdownProps {
 
 interface IPopoverDropdownState {
   readonly showPopover: boolean
-  readonly popoverContentHeight: number
 }
 
 /**
@@ -35,36 +33,6 @@ export class PopoverDropdown extends React.Component<
 
     this.state = {
       showPopover: false,
-      popoverContentHeight: defaultPopoverContentHeight,
-    }
-  }
-
-  public componentDidMount() {
-    this.calculateDropdownListHeight()
-  }
-
-  public componentDidUpdate() {
-    this.calculateDropdownListHeight()
-  }
-
-  private calculateDropdownListHeight = () => {
-    if (this.invokeButtonRef === null) {
-      return
-    }
-
-    const windowHeight = window.innerHeight
-    const bottomOfButton = this.invokeButtonRef.getBoundingClientRect().bottom
-    const listHeaderHeight = 75
-    const calcMaxHeight = Math.round(
-      windowHeight - bottomOfButton - listHeaderHeight
-    )
-
-    const popoverContentHeight =
-      calcMaxHeight > maxPopoverContentHeight
-        ? maxPopoverContentHeight
-        : calcMaxHeight
-    if (popoverContentHeight !== this.state.popoverContentHeight) {
-      this.setState({ popoverContentHeight })
     }
   }
 
@@ -86,27 +54,30 @@ export class PopoverDropdown extends React.Component<
     }
 
     const { contentTitle } = this.props
-    const { popoverContentHeight } = this.state
-    const contentStyle = { height: `${popoverContentHeight}px` }
 
     return (
       <Popover
         className="popover-dropdown-popover"
-        caretPosition={PopoverCaretPosition.TopLeft}
+        anchor={this.invokeButtonRef}
+        anchorPosition={PopoverAnchorPosition.BottomLeft}
+        maxHeight={maxPopoverContentHeight}
+        decoration={PopoverDecoration.Balloon}
         onClickOutside={this.closePopover}
+        ariaLabelledby="popover-dropdown-header"
       >
-        <div className="popover-dropdown-header">
-          {contentTitle}
-          <button
-            className="close"
-            onClick={this.closePopover}
-            aria-label="close"
-          >
-            <Octicon symbol={OcticonSymbol.x} />
-          </button>
-        </div>
-        <div className="popover-dropdown-content" style={contentStyle}>
-          {this.props.children}
+        <div className="popover-dropdown-wrapper">
+          <div className="popover-dropdown-header">
+            <h3 id="popover-dropdown-header">{contentTitle}</h3>
+
+            <button
+              className="close"
+              onClick={this.closePopover}
+              aria-label="Close"
+            >
+              <Octicon symbol={octicons.x} />
+            </button>
+          </div>
+          <div className="popover-dropdown-content">{this.props.children}</div>
         </div>
       </Popover>
     )
@@ -124,7 +95,7 @@ export class PopoverDropdown extends React.Component<
         >
           <span className="popover-dropdown-button-label">{label}</span>
           <span className="button-content">{buttonContent}</span>
-          <Octicon symbol={OcticonSymbol.triangleDown} />
+          <Octicon symbol={octicons.triangleDown} />
         </Button>
         {this.renderPopover()}
       </div>

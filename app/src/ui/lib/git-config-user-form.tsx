@@ -1,9 +1,15 @@
 import * as React from 'react'
 import { TextBox } from './text-box'
 import { Row } from './row'
-import { Account } from '../../models/account'
+import {
+  Account,
+  isDotComAccount,
+  isEnterpriseAccount,
+} from '../../models/account'
 import { Select } from './select'
 import { GitEmailNotFoundWarning } from './git-email-not-found-warning'
+import { getStealthEmailForAccount } from '../../lib/email'
+import memoizeOne from 'memoize-one'
 
 const OtherEmailSelectValue = 'Other'
 
@@ -11,13 +17,20 @@ interface IGitConfigUserFormProps {
   readonly name: string
   readonly email: string
 
-  readonly dotComAccount: Account | null
-  readonly enterpriseAccount: Account | null
-
+  /**
+   * The accounts from which to source candidates for email selection
+   *
+   * When the GitConfigUserForm is used from the repository settings, this
+   * should contain only the account associated with the current repository but
+   * when used from the Preferences dialog it should contain all accounts.
+   */
+  readonly accounts: ReadonlyArray<Account>
   readonly disabled?: boolean
 
   readonly onNameChanged: (name: string) => void
   readonly onEmailChanged: (email: string) => void
+
+  readonly isLoadingGitConfig: boolean
 }
 
 interface IGitConfigUserFormState {
@@ -27,6 +40,12 @@ interface IGitConfigUserFormState {
    * enter a custom email address.
    */
   readonly emailIsOther: boolean
+}
+
+type AccountEmail = {
+  readonly email: string
+  readonly normalizedEmail: string
+  readonly account: Account
 }
 
 /**
@@ -43,14 +62,48 @@ export class GitConfigUserForm extends React.Component<
 > {
   private emailInputRef = React.createRef<TextBox>()
 
+  private getAccountEmailsFromAccounts = memoizeOne(
+    (accounts: ReadonlyArray<Account>) => {
+      const seenEmails = new Set<string>()
+      const accountEmails = new Array<AccountEmail>()
+
+      for (const account of accounts) {
+        const verifiedEmails = account.emails
+          .filter(x => x.verified)
+          .map(x => x.email)
+
+        // For GitHub.com we always include the stealth email, see
+        // https://github.com/desktop/desktop/pull/19968
+        const emails = isDotComAccount(account)
+          ? [...verifiedEmails, getStealthEmailForAccount(account)]
+          : verifiedEmails
+
+        for (const email of emails) {
+          const normalizedEmail = email.toLowerCase()
+
+          if (!seenEmails.has(normalizedEmail)) {
+            seenEmails.add(normalizedEmail)
+            accountEmails.push({ email, normalizedEmail, account })
+          }
+        }
+      }
+
+      return accountEmails
+    }
+  )
+
   public constructor(props: IGitConfigUserFormProps) {
     super(props)
 
     this.state = {
       emailIsOther:
-        this.accountEmails.length > 0 &&
-        !this.accountEmails.includes(this.props.email),
+        !this.isValidEmail(props.email) && !props.isLoadingGitConfig,
     }
+  }
+
+  private isValidEmail = (email: string) => {
+    const normalizedEmail = email.toLowerCase()
+    return this.accountEmails.some(x => x.normalizedEmail === normalizedEmail)
   }
 
   public componentDidUpdate(
@@ -70,8 +123,8 @@ export class GitConfigUserForm extends React.Component<
     if (prevProps.email !== this.props.email && !isEmailInputFocused) {
       this.setState({
         emailIsOther:
-          this.accountEmails.length > 0 &&
-          !this.accountEmails.includes(this.props.email),
+          !this.isValidEmail(this.props.email) &&
+          !this.props.isLoadingGitConfig,
       })
     }
 
@@ -101,10 +154,12 @@ export class GitConfigUserForm extends React.Component<
         </Row>
         {this.renderEmailDropdown()}
         {this.renderEmailTextBox()}
-        <GitEmailNotFoundWarning
-          accounts={this.accounts}
-          email={this.props.email}
-        />
+        {this.state.emailIsOther ? (
+          <GitEmailNotFoundWarning
+            accounts={this.props.accounts}
+            email={this.props.email}
+          />
+        ) : null}
       </div>
     )
   }
@@ -114,18 +169,14 @@ export class GitConfigUserForm extends React.Component<
       return null
     }
 
-    const dotComEmails =
-      this.props.dotComAccount?.emails.map(e => e.email) ?? []
-    const enterpriseEmails =
-      this.props.enterpriseAccount?.emails.map(e => e.email) ?? []
-
     // When the user signed in both accounts, show a suffix to differentiate
     // the origin of each email address
     const shouldShowAccountType =
-      this.props.dotComAccount !== null && this.props.enterpriseAccount !== null
+      this.props.accounts.some(isDotComAccount) &&
+      this.props.accounts.some(isEnterpriseAccount)
 
-    const dotComSuffix = shouldShowAccountType ? '(GitHub.com)' : ''
-    const enterpriseSuffix = shouldShowAccountType ? '(GitHub Enterprise)' : ''
+    const accountSuffix = (account: Account) =>
+      isDotComAccount(account) ? '(GitHub.com)' : '(GitHub Enterprise)'
 
     return (
       <Row>
@@ -137,14 +188,9 @@ export class GitConfigUserForm extends React.Component<
           disabled={this.props.disabled}
           onChange={this.onEmailSelectChange}
         >
-          {dotComEmails.map(e => (
-            <option key={e} value={e}>
-              {e} {dotComSuffix}
-            </option>
-          ))}
-          {enterpriseEmails.map(e => (
-            <option key={e} value={e}>
-              {e} {enterpriseSuffix}
+          {this.accountEmails.map(e => (
+            <option key={e.email} value={e.email}>
+              {e.email} {shouldShowAccountType && accountSuffix(e.account)}
             </option>
           ))}
           <option key={OtherEmailSelectValue} value={OtherEmailSelectValue}>
@@ -164,6 +210,8 @@ export class GitConfigUserForm extends React.Component<
     // presented independently, without the email dropdown, not when presented
     // as a consequence of the option "Other" selected in the dropdown.
     const label = this.state.emailIsOther ? undefined : 'Email'
+    // If there is not a label, provide a screen reader announcement.
+    const ariaLabel = label ? undefined : 'Email'
 
     return (
       <Row>
@@ -174,33 +222,16 @@ export class GitConfigUserForm extends React.Component<
           value={this.props.email}
           disabled={this.props.disabled}
           onValueChanged={this.props.onEmailChanged}
+          ariaLabel={ariaLabel}
+          ariaDescribedBy="git-email-not-found-warning-for-screen-readers"
+          ariaControls="git-email-not-found-warning-for-screen-readers"
         />
       </Row>
     )
   }
 
-  private get accounts(): ReadonlyArray<Account> {
-    const accounts = []
-
-    if (this.props.dotComAccount) {
-      accounts.push(this.props.dotComAccount)
-    }
-
-    if (this.props.enterpriseAccount) {
-      accounts.push(this.props.enterpriseAccount)
-    }
-
-    return accounts
-  }
-
-  private get accountEmails(): ReadonlyArray<string> {
-    // Merge email addresses from all accounts into an array
-    return this.accounts.reduce<ReadonlyArray<string>>(
-      (previousValue, currentValue) => {
-        return previousValue.concat(currentValue.emails.map(e => e.email))
-      },
-      []
-    )
+  private get accountEmails(): ReadonlyArray<AccountEmail> {
+    return this.getAccountEmailsFromAccounts(this.props.accounts)
   }
 
   private onEmailSelectChange = (event: React.FormEvent<HTMLSelectElement>) => {

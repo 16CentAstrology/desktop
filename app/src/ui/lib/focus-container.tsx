@@ -3,6 +3,7 @@ import classNames from 'classnames'
 
 interface IFocusContainerProps {
   readonly className?: string
+  readonly role?: React.HTMLAttributes<HTMLElement>['role']
   readonly onClick?: (event: React.MouseEvent<HTMLDivElement>) => void
   readonly onKeyDown?: (event: React.KeyboardEvent<HTMLDivElement>) => void
 
@@ -100,10 +101,15 @@ export class FocusContainer extends React.Component<
     })
 
     return (
+      /**
+       * This a11y linter is a false-positive as the element is facilitating our
+       * ability to track and react to focus changes within a container.
+       */
       // eslint-disable-next-line jsx-a11y/no-static-element-interactions
       <div
         className={className}
         ref={this.onWrapperRef}
+        role={this.props.role}
         onClick={this.onClick}
         onMouseDown={this.onMouseDown}
         onKeyDown={this.onKeyDown}

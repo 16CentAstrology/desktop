@@ -1,8 +1,10 @@
 import { IAPIRepository } from '../../lib/api'
 import { IFilterListGroup, IFilterListItem } from '../lib/filter-list'
-import { caseInsensitiveCompare } from '../../lib/compare'
-import { OcticonSymbolType } from '../octicons'
-import * as OcticonSymbol from '../octicons/octicons.generated'
+import { OcticonSymbol } from '../octicons'
+import * as octicons from '../octicons/octicons.generated'
+import entries from 'lodash/entries'
+import groupBy from 'lodash/groupBy'
+import { caseInsensitiveEquals, compare } from '../../lib/compare'
 
 /** The identifier for the "Your Repositories" grouping. */
 export const YourRepositoriesIdentifier = 'your-repositories'
@@ -18,70 +20,57 @@ export interface ICloneableRepositoryListItem extends IFilterListItem {
   readonly name: string
 
   /** The icon for the repo. */
-  readonly icon: OcticonSymbolType
+  readonly icon: OcticonSymbol
 
   /** The clone URL. */
   readonly url: string
+
+  /** Whether or not the repository is archived */
+  readonly archived?: boolean
 }
 
-function getIcon(gitHubRepo: IAPIRepository): OcticonSymbolType {
+function getIcon(gitHubRepo: IAPIRepository): OcticonSymbol {
   if (gitHubRepo.private) {
-    return OcticonSymbol.lock
+    return octicons.lock
   }
   if (gitHubRepo.fork) {
-    return OcticonSymbol.repoForked
+    return octicons.repoForked
   }
 
-  return OcticonSymbol.repo
+  return octicons.repo
 }
 
-function convert(
-  repositories: ReadonlyArray<IAPIRepository>
-): ReadonlyArray<ICloneableRepositoryListItem> {
-  const repos: ReadonlyArray<ICloneableRepositoryListItem> = repositories.map(
-    repo => {
-      const icon = getIcon(repo)
-
-      return {
-        id: repo.html_url,
-        text: [`${repo.owner.login}/${repo.name}`],
-        url: repo.clone_url,
-        name: repo.name,
-        icon,
-      }
-    }
-  )
-
-  return repos
-}
+const toListItems = (repositories: ReadonlyArray<IAPIRepository>) =>
+  repositories
+    .map<ICloneableRepositoryListItem>(repo => ({
+      id: repo.html_url,
+      text: [`${repo.owner.login}/${repo.name}`],
+      url: repo.clone_url,
+      name: repo.name,
+      icon: getIcon(repo),
+      archived: repo.archived,
+    }))
+    .sort((x, y) => compare(x.name, y.name))
 
 export function groupRepositories(
   repositories: ReadonlyArray<IAPIRepository>,
   login: string
 ): ReadonlyArray<IFilterListGroup<ICloneableRepositoryListItem>> {
-  const userRepos = repositories.filter(repo => repo.owner.type === 'User')
-  const orgRepos = repositories.filter(
-    repo => repo.owner.type === 'Organization'
+  const groups = groupBy(repositories, x =>
+    caseInsensitiveEquals(x.owner.login, login)
+      ? YourRepositoriesIdentifier
+      : x.owner.login
   )
 
-  const groups = [
-    {
-      identifier: YourRepositoriesIdentifier,
-      items: convert(userRepos),
-    },
-  ]
-
-  const orgs = orgRepos.map(repo => repo.owner.login)
-  const distinctOrgs = Array.from(new Set(orgs))
-
-  for (const org of distinctOrgs.sort(caseInsensitiveCompare)) {
-    const orgRepositories = orgRepos.filter(repo => repo.owner.login === org)
-
-    groups.push({
-      identifier: org,
-      items: convert(orgRepositories),
+  return entries(groups)
+    .map(([identifier, repos]) => ({ identifier, items: toListItems(repos) }))
+    .sort((x, y) => {
+      if (x.identifier === YourRepositoriesIdentifier) {
+        return -1
+      } else if (y.identifier === YourRepositoriesIdentifier) {
+        return 1
+      } else {
+        return compare(x.identifier, y.identifier)
+      }
     })
-  }
-
-  return groups
 }

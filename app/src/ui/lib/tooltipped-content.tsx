@@ -14,6 +14,9 @@ interface ITooltippedContentProps
   /** The wrapper element tag name, defaults to span */
   readonly tagName?: keyof HTMLElementTagNameMap
 
+  /** The html id of the element */
+  readonly id?: string
+
   /**
    * An optional additional class name to set on the tooltip in order to be able
    * to apply specific styles to the tooltip
@@ -22,6 +25,16 @@ interface ITooltippedContentProps
 
   /** An optional class name to set on the wrapper element */
   readonly className?: string
+
+  /** Open on target focus */
+  readonly openOnFocus?: boolean
+
+  /** Whether or not an ancestor component is focused, used in case we want
+   * the tooltip to be shown when it's focused. Examples of this are how we
+   * want to show the tooltip for file status icons when files in the file
+   * list are focused.
+   */
+  readonly ancestorFocused?: boolean
 }
 
 /**
@@ -37,6 +50,7 @@ export class TooltippedContent extends React.Component<ITooltippedContentProps> 
       this.props
 
     return React.createElement(tagName ?? 'span', {
+      id: this.props.id,
       ref: this.wrapperRef,
       className: className,
       children: (

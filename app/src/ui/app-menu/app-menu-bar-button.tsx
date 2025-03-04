@@ -28,15 +28,6 @@ interface IAppMenuBarButtonProps {
   readonly enableAccessKeyNavigation: boolean
 
   /**
-   * Whether the menu was opened by pressing Alt (or Alt+X where X is an
-   * access key for one of the top level menu items). This is used as a
-   * one-time signal to the AppMenu to use some special semantics for
-   * selection and focus. Specifically it will ensure that the last opened
-   * menu will receive focus.
-   */
-  readonly openedWithAccessKey: boolean
-
-  /**
    * Whether or not to highlight the access key of a top-level menu
    * items (if they have one). This is normally true when the Alt-key
    * is pressed, signifying that the item is accessible by holding Alt
@@ -202,14 +193,19 @@ export class AppMenuBarButton extends React.Component<
         onMouseEnter={this.onMouseEnter}
         onKeyDown={this.onKeyDown}
         tabIndex={-1}
-        role="menuitem"
+        buttonRole="menuitem"
+        buttonAriaHaspopup="menu"
       >
         <MenuListItem
+          menuItemId={`app-menu-${item.label}`}
           item={item}
           highlightAccessKey={this.props.highlightMenuAccessKey}
           renderAcceleratorText={false}
           renderSubMenuArrow={false}
           selected={false}
+          // Root menu items are wrapped in AppMenuBarButton components which
+          // already have the role="menuitem" attribute.
+          hasNoRole={true}
         />
       </ToolbarDropdown>
     )
@@ -255,7 +251,7 @@ export class AppMenuBarButton extends React.Component<
     if (this.isMenuOpen) {
       this.props.onClose(this.props.menuItem, source)
     } else {
-      this.props.onOpen(this.props.menuItem)
+      this.props.onOpen(this.props.menuItem, true)
     }
   }
 
@@ -270,10 +266,9 @@ export class AppMenuBarButton extends React.Component<
       <AppMenu
         dispatcher={this.props.dispatcher}
         onClose={this.onMenuClose}
-        openedWithAccessKey={this.props.openedWithAccessKey}
         state={menuState}
         enableAccessKeyNavigation={this.props.enableAccessKeyNavigation}
-        autoHeight={true}
+        ariaLabelledby={`app-menu-${this.props.menuItem.label}`}
       />
     )
   }

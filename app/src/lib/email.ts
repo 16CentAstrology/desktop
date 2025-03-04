@@ -1,7 +1,6 @@
-import * as URL from 'url'
-
-import { IAPIEmail, getDotComAPIEndpoint } from './api'
+import { IAPIEmail } from './api'
 import { Account } from '../models/account'
+import { isGHES } from './endpoint-capabilities'
 
 /**
  * Lookup a suitable email address to display in the application, based on the
@@ -53,11 +52,10 @@ function isEmailPublic(email: IAPIEmail): boolean {
  * email host is hardcoded to the subdomain users.noreply under the
  * endpoint host.
  */
-function getStealthEmailHostForEndpoint(endpoint: string) {
-  return getDotComAPIEndpoint() !== endpoint
-    ? `users.noreply.${URL.parse(endpoint).hostname}`
+const getStealthEmailHostForEndpoint = (endpoint: string) =>
+  isGHES(endpoint)
+    ? `users.noreply.${new URL(endpoint).hostname}`
     : 'users.noreply.github.com'
-}
 
 /**
  * Generate a legacy stealth email address for the user
@@ -74,6 +72,16 @@ export function getLegacyStealthEmailForUser(login: string, endpoint: string) {
   const stealthEmailHost = getStealthEmailHostForEndpoint(endpoint)
   return `${login}@${stealthEmailHost}`
 }
+
+/**
+ * Generate a stealth email address for the account. Convenience method
+ * for getStealthEmailForUser that takes an Account object instead of
+ * individual parameters.
+ *
+ * Ex: 123456+desktop@users.noreply.github.com
+ */
+export const getStealthEmailForAccount = (account: Account) =>
+  getStealthEmailForUser(account.id, account.login, account.endpoint)
 
 /**
  * Generate a stealth email address for the user on the given
@@ -117,8 +125,29 @@ export const isAttributableEmailFor = (account: Account, email: string) => {
   const needle = email.toLowerCase()
 
   return (
-    emails.some(({ email }) => email.toLowerCase() === needle) ||
+    emails.some(e => e.verified && e.email.toLowerCase() === needle) ||
     getStealthEmailForUser(id, login, endpoint).toLowerCase() === needle ||
     getLegacyStealthEmailForUser(login, endpoint).toLowerCase() === needle
   )
+}
+
+/**
+ * A regular expression meant to match both the legacy format GitHub.com
+ * stealth email address and the modern format (login@ vs id+login@).
+ *
+ * Yields two capture groups, the first being an optional capture of the
+ * user id and the second being the mandatory login.
+ */
+const StealthEmailRegexp = /^(?:(\d+)\+)?(.+?)@(users\.noreply\..+)$/i
+
+export const parseStealthEmail = (email: string, endpoint: string) => {
+  const stealthEmailHost = getStealthEmailHostForEndpoint(endpoint)
+  const match = StealthEmailRegexp.exec(email)
+
+  if (!match || stealthEmailHost !== match[3]) {
+    return null
+  }
+
+  const [, id, login] = match
+  return { id: id ? parseInt(id, 10) : undefined, login }
 }

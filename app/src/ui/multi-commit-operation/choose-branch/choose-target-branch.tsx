@@ -13,8 +13,11 @@ import {
   renderDefaultBranch,
 } from '../../branches'
 import { ClickSource } from '../../lib/list'
+import { getDefaultAriaLabelForBranch } from '../../branches/branch-renderer'
+import { Repository } from '../../../models/repository'
 
 interface IChooseTargetBranchDialogProps {
+  readonly repository: Repository
   /**
    * See IBranchesState.defaultBranch
    */
@@ -92,8 +95,24 @@ export class ChooseTargetBranchDialog extends React.Component<
     this.setState({ selectedBranch })
   }
 
-  private renderBranch = (item: IBranchListItem, matches: IMatches) => {
-    return renderDefaultBranch(item, matches, this.props.currentBranch)
+  private renderBranch = (
+    item: IBranchListItem,
+    matches: IMatches,
+    authorDate: Date | undefined
+  ) => {
+    return renderDefaultBranch(
+      item,
+      matches,
+      this.props.currentBranch,
+      authorDate
+    )
+  }
+
+  private getBranchAriaLabel = (
+    item: IBranchListItem,
+    authorDate: Date | undefined
+  ): string => {
+    return getDefaultAriaLabelForBranch(item, authorDate)
   }
 
   private onEnterPressed = (branch: Branch, source: ClickSource) => {
@@ -170,7 +189,6 @@ export class ChooseTargetBranchDialog extends React.Component<
         id="cherry-pick"
         onDismissed={this.props.onDismissed}
         onSubmit={this.onSubmit}
-        dismissable={true}
         title={
           <strong>
             Cherry-pick {this.props.commitCount} {pluralize} to a branch
@@ -179,6 +197,7 @@ export class ChooseTargetBranchDialog extends React.Component<
       >
         <DialogContent>
           <BranchList
+            repository={this.props.repository}
             allBranches={this.props.allBranches}
             currentBranch={this.props.currentBranch}
             defaultBranch={this.props.defaultBranch}
@@ -191,6 +210,7 @@ export class ChooseTargetBranchDialog extends React.Component<
             canCreateNewBranch={true}
             onCreateNewBranch={this.props.onCreateNewBranch}
             renderBranch={this.renderBranch}
+            getBranchAriaLabel={this.getBranchAriaLabel}
             onItemClick={this.onEnterPressed}
           />
         </DialogContent>
