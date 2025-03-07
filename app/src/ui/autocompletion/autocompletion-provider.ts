@@ -1,11 +1,15 @@
 import { AutocompletingTextInput } from './autocompleting-text-input'
 
-export class AutocompletingTextArea extends AutocompletingTextInput<HTMLTextAreaElement> {
+export class AutocompletingTextArea<
+  AutocompleteItemType extends object = object
+> extends AutocompletingTextInput<HTMLTextAreaElement, AutocompleteItemType> {
   protected getElementTagName(): 'textarea' | 'input' {
     return 'textarea'
   }
 }
-export class AutocompletingInput extends AutocompletingTextInput<HTMLInputElement> {
+export class AutocompletingInput<
+  AutocompleteItemType extends object = object
+> extends AutocompletingTextInput<HTMLInputElement, AutocompleteItemType> {
   protected getElementTagName(): 'textarea' | 'input' {
     return 'input'
   }
@@ -39,6 +43,9 @@ export interface IAutocompletionProvider<T> {
    * returned from `getAutocompletionItems`.
    */
   renderItem(item: T): JSX.Element
+
+  /** Returns the aria-label attribute for the rendered item. Optional. */
+  getItemAriaLabel?(item: T): string
 
   /**
    * Returns a text representation of a given autocompletion results.

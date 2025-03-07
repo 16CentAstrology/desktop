@@ -3,41 +3,26 @@ import { DialogContent } from '../dialog'
 import { Checkbox, CheckboxValue } from '../lib/checkbox'
 import { LinkButton } from '../lib/link-button'
 import { SamplesURL } from '../../lib/stats'
-import { UncommittedChangesStrategy } from '../../models/uncommitted-changes-strategy'
-import { RadioButton } from '../lib/radio-button'
 import { isWindowsOpenSSHAvailable } from '../../lib/ssh/ssh'
-import {
-  getNotificationSettingsUrl,
-  supportsNotifications,
-  supportsNotificationsPermissionRequest,
-} from 'desktop-notifications'
-import {
-  getNotificationsPermission,
-  requestNotificationsPermission,
-} from '../main-process-proxy'
+import { enableFilteredChangesList } from '../../lib/feature-flag'
 
 interface IAdvancedPreferencesProps {
   readonly useWindowsOpenSSH: boolean
   readonly optOutOfUsageTracking: boolean
-  readonly notificationsEnabled: boolean
-  readonly uncommittedChangesStrategy: UncommittedChangesStrategy
+  readonly useExternalCredentialHelper: boolean
   readonly repositoryIndicatorsEnabled: boolean
+  readonly canFilterChanges: boolean
   readonly onUseWindowsOpenSSHChanged: (checked: boolean) => void
-  readonly onNotificationsEnabledChanged: (checked: boolean) => void
   readonly onOptOutofReportingChanged: (checked: boolean) => void
-  readonly onUncommittedChangesStrategyChanged: (
-    value: UncommittedChangesStrategy
-  ) => void
+  readonly onUseExternalCredentialHelperChanged: (checked: boolean) => void
   readonly onRepositoryIndicatorsEnabledChanged: (enabled: boolean) => void
+  readonly onCanFilterChangesChanged: (enabled: boolean) => void
 }
 
 interface IAdvancedPreferencesState {
   readonly optOutOfUsageTracking: boolean
-  readonly uncommittedChangesStrategy: UncommittedChangesStrategy
   readonly canUseWindowsSSH: boolean
-  readonly suggestGrantNotificationPermission: boolean
-  readonly warnNotificationsDenied: boolean
-  readonly suggestConfigureNotifications: boolean
+  readonly useExternalCredentialHelper: boolean
 }
 
 export class Advanced extends React.Component<
@@ -49,17 +34,13 @@ export class Advanced extends React.Component<
 
     this.state = {
       optOutOfUsageTracking: this.props.optOutOfUsageTracking,
-      uncommittedChangesStrategy: this.props.uncommittedChangesStrategy,
       canUseWindowsSSH: false,
-      suggestGrantNotificationPermission: false,
-      warnNotificationsDenied: false,
-      suggestConfigureNotifications: false,
+      useExternalCredentialHelper: this.props.useExternalCredentialHelper,
     }
   }
 
   public componentDidMount() {
     this.checkSSHAvailability()
-    this.updateNotificationsState()
   }
 
   private async checkSSHAvailability() {
@@ -75,11 +56,13 @@ export class Advanced extends React.Component<
     this.props.onOptOutofReportingChanged(value)
   }
 
-  private onUncommittedChangesStrategyChanged = (
-    value: UncommittedChangesStrategy
+  private onUseExternalCredentialHelperChanged = (
+    event: React.FormEvent<HTMLInputElement>
   ) => {
-    this.setState({ uncommittedChangesStrategy: value })
-    this.props.onUncommittedChangesStrategyChanged(value)
+    const value = event.currentTarget.checked
+
+    this.setState({ useExternalCredentialHelper: value })
+    this.props.onUseExternalCredentialHelperChanged(value)
   }
 
   private onRepositoryIndicatorsEnabledChanged = (
@@ -94,10 +77,10 @@ export class Advanced extends React.Component<
     this.props.onUseWindowsOpenSSHChanged(event.currentTarget.checked)
   }
 
-  private onNotificationsEnabledChanged = (
+  private onCanFilterChangesChanged = (
     event: React.FormEvent<HTMLInputElement>
   ) => {
-    this.props.onNotificationsEnabledChanged(event.currentTarget.checked)
+    this.props.onCanFilterChangesChanged(event.currentTarget.checked)
   }
 
   private reportDesktopUsageLabel() {
@@ -113,56 +96,33 @@ export class Advanced extends React.Component<
     return (
       <DialogContent>
         <div className="advanced-section">
-          <h2>If I have changes and I switch branches...</h2>
-
-          <RadioButton
-            value={UncommittedChangesStrategy.AskForConfirmation}
-            checked={
-              this.state.uncommittedChangesStrategy ===
-              UncommittedChangesStrategy.AskForConfirmation
-            }
-            label="Ask me where I want the changes to go"
-            onSelected={this.onUncommittedChangesStrategyChanged}
-          />
-
-          <RadioButton
-            value={UncommittedChangesStrategy.MoveToNewBranch}
-            checked={
-              this.state.uncommittedChangesStrategy ===
-              UncommittedChangesStrategy.MoveToNewBranch
-            }
-            label="Always bring my changes to my new branch"
-            onSelected={this.onUncommittedChangesStrategyChanged}
-          />
-
-          <RadioButton
-            value={UncommittedChangesStrategy.StashOnCurrentBranch}
-            checked={
-              this.state.uncommittedChangesStrategy ===
-              UncommittedChangesStrategy.StashOnCurrentBranch
-            }
-            label="Always stash and leave my changes on the current branch"
-            onSelected={this.onUncommittedChangesStrategyChanged}
-          />
-        </div>
-        <div className="advanced-section">
           <h2>Background updates</h2>
           <Checkbox
-            label="Periodically fetch and refresh status of all repositories"
+            label="Show status icons in the repository list"
             value={
               this.props.repositoryIndicatorsEnabled
                 ? CheckboxValue.On
                 : CheckboxValue.Off
             }
             onChange={this.onRepositoryIndicatorsEnabledChanged}
+            ariaDescribedBy="periodic-fetch-description"
           />
-          <p className="git-settings-description">
-            Allows the display of up-to-date status indicators in the repository
-            list. Disabling this may improve performance with many repositories.
-          </p>
+          <div
+            id="periodic-fetch-description"
+            className="git-settings-description"
+          >
+            <p>
+              These icons indicate which repositories have local or remote
+              changes, and require the periodic fetching of repositories that
+              are not currently selected.
+            </p>
+            <p>
+              Turning this off will not stop the periodic fetching of your
+              currently selected repository, but may improve overall app
+              performance for users with many repositories.
+            </p>
+          </div>
         </div>
-        {this.renderSSHSettings()}
-        {this.renderNotificationsSettings()}
         <div className="advanced-section">
           <h2>Usage</h2>
           <Checkbox
@@ -175,7 +135,56 @@ export class Advanced extends React.Component<
             onChange={this.onReportingOptOutChanged}
           />
         </div>
+        <h2>Network and credentials</h2>
+        {this.renderSSHSettings()}
+        <div className="advanced-section">
+          <Checkbox
+            label={'Use Git Credential Manager'}
+            value={
+              this.state.useExternalCredentialHelper
+                ? CheckboxValue.On
+                : CheckboxValue.Off
+            }
+            onChange={this.onUseExternalCredentialHelperChanged}
+            ariaDescribedBy="use-external-credential-helper-description"
+          />
+          <div
+            id="use-external-credential-helper-description"
+            className="git-settings-description"
+          >
+            <p>
+              Use{' '}
+              <LinkButton uri="https://gh.io/gcm">
+                Git Credential Manager{' '}
+              </LinkButton>{' '}
+              for private repositories outside of GitHub.com. This feature is
+              experimental and subject to change.
+            </p>
+          </div>
+        </div>
+        {this.renderFilteredChangesSetting()}
       </DialogContent>
+    )
+  }
+
+  private renderFilteredChangesSetting() {
+    if (!enableFilteredChangesList()) {
+      return
+    }
+
+    return (
+      <>
+        <h2>Filter Changes</h2>
+        <div className="advanced-section">
+          <Checkbox
+            label={'Filter Changes'}
+            value={
+              this.props.canFilterChanges ? CheckboxValue.On : CheckboxValue.Off
+            }
+            onChange={this.onCanFilterChangesChanged}
+          />
+        </div>{' '}
+      </>
     )
   }
 
@@ -186,7 +195,6 @@ export class Advanced extends React.Component<
 
     return (
       <div className="advanced-section">
-        <h2>SSH</h2>
         <Checkbox
           label="Use system OpenSSH (recommended)"
           value={
@@ -195,106 +203,6 @@ export class Advanced extends React.Component<
           onChange={this.onUseWindowsOpenSSHChanged}
         />
       </div>
-    )
-  }
-
-  private renderNotificationsSettings() {
-    return (
-      <div className="advanced-section">
-        <h2>Notifications</h2>
-        <Checkbox
-          label="Enable notifications"
-          value={
-            this.props.notificationsEnabled
-              ? CheckboxValue.On
-              : CheckboxValue.Off
-          }
-          onChange={this.onNotificationsEnabledChanged}
-        />
-        <p className="git-settings-description">
-          Allows the display of notifications when high-signal events take place
-          in the current repository.{this.renderNotificationHint()}
-        </p>
-      </div>
-    )
-  }
-
-  private onGrantNotificationPermission = async () => {
-    await requestNotificationsPermission()
-    this.updateNotificationsState()
-  }
-
-  private async updateNotificationsState() {
-    const notificationsPermission = await getNotificationsPermission()
-    this.setState({
-      suggestGrantNotificationPermission:
-        supportsNotificationsPermissionRequest() &&
-        notificationsPermission === 'default',
-      warnNotificationsDenied: notificationsPermission === 'denied',
-      suggestConfigureNotifications: notificationsPermission === 'granted',
-    })
-  }
-
-  private renderNotificationHint() {
-    // No need to bother the user if their environment doesn't support our
-    // notifications or if they've been explicitly disabled.
-    if (!supportsNotifications() || !this.props.notificationsEnabled) {
-      return null
-    }
-
-    const {
-      suggestGrantNotificationPermission,
-      warnNotificationsDenied,
-      suggestConfigureNotifications,
-    } = this.state
-
-    if (suggestGrantNotificationPermission) {
-      return (
-        <>
-          {' '}
-          You need to{' '}
-          <LinkButton onClick={this.onGrantNotificationPermission}>
-            grant permission
-          </LinkButton>{' '}
-          to display these notifications from GitHub Desktop.
-        </>
-      )
-    }
-
-    const notificationSettingsURL = getNotificationSettingsUrl()
-
-    if (notificationSettingsURL === null) {
-      return null
-    }
-
-    if (warnNotificationsDenied) {
-      return (
-        <>
-          <br />
-          <br />
-          <span className="warning-icon">⚠️</span> GitHub Desktop has no
-          permission to display notifications. Please, enable them in the{' '}
-          <LinkButton uri={notificationSettingsURL}>
-            Notifications Settings
-          </LinkButton>
-          .
-        </>
-      )
-    }
-
-    const verb = suggestConfigureNotifications
-      ? 'properly configured'
-      : 'enabled'
-
-    return (
-      <>
-        {' '}
-        Make sure notifications are {verb} for GitHub Desktop in the{' '}
-        <LinkButton uri={notificationSettingsURL}>
-          Notifications Settings
-        </LinkButton>
-        .
-      </>
     )
   }
 }

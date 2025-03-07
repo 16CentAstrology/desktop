@@ -6,6 +6,7 @@ import {
   autoUpdater,
   nativeTheme,
 } from 'electron'
+import { shell } from '../lib/app-shell'
 import { Emitter, Disposable } from 'event-kit'
 import { encodePathAsUrl } from '../lib/path'
 import {
@@ -26,7 +27,8 @@ import {
   terminateDesktopNotifications,
 } from './notifications'
 import { addTrustedIPCSender } from './trusted-ipc-sender'
-import { enablePreventClosingWhileUpdating } from '../lib/feature-flag'
+import { getUpdaterGUID } from '../lib/get-updater-guid'
+import { CLIAction } from '../lib/cli-action'
 
 export class AppWindow {
   private window: Electron.BrowserWindow
@@ -115,7 +117,6 @@ export class AppWindow {
       // app is updating, we will prevent the window from closing only when the
       // app is also quitting.
       if (
-        enablePreventClosingWhileUpdating() &&
         (!__DARWIN__ || quitting) &&
         !quittingEvenIfUpdating &&
         this.isDownloadingUpdate
@@ -140,9 +141,9 @@ export class AppWindow {
         // https://github.com/desktop/desktop/issues/12838
         if (this.window.isFullScreen()) {
           this.window.setFullScreen(false)
-          this.window.once('leave-full-screen', () => app.hide())
+          this.window.once('leave-full-screen', () => this.window.hide())
         } else {
-          app.hide()
+          this.window.hide()
         }
         return
       }
@@ -150,29 +151,6 @@ export class AppWindow {
       autoUpdater.removeAllListeners()
       terminateDesktopNotifications()
     })
-
-    if (__WIN32__) {
-      // workaround for known issue with fullscreen-ing the app and restoring
-      // is that some Chromium API reports the incorrect bounds, so that it
-      // will leave a small space at the top of the screen on every other
-      // maximize
-      //
-      // adapted from https://github.com/electron/electron/issues/12971#issuecomment-403956396
-      //
-      // can be tidied up once https://github.com/electron/electron/issues/12971
-      // has been confirmed as resolved
-      this.window.once('ready-to-show', () => {
-        this.window.on('unmaximize', () => {
-          setTimeout(() => {
-            const bounds = this.window.getBounds()
-            bounds.width += 1
-            this.window.setBounds(bounds)
-            bounds.width -= 1
-            this.window.setBounds(bounds)
-          }, 5)
-        })
-      })
-    }
   }
 
   public load() {
@@ -225,7 +203,7 @@ export class AppWindow {
     registerWindowStateChangedEvents(this.window)
     this.window.loadURL(encodePathAsUrl(__dirname, 'index.html'))
 
-    nativeTheme.addListener('updated', (event: string, userInfo: any) => {
+    nativeTheme.addListener('updated', () => {
       ipcWebContents.send(this.window.webContents, 'native-theme-updated')
     })
 
@@ -312,6 +290,13 @@ export class AppWindow {
     ipcWebContents.send(this.window.webContents, 'url-action', action)
   }
 
+  /** Send the URL action to the renderer. */
+  public sendCLIAction(action: CLIAction) {
+    this.show()
+
+    ipcWebContents.send(this.window.webContents, 'cli-action', action)
+  }
+
   /** Send the app launch timing stats to the renderer. */
   public sendLaunchTimingStats(stats: ILaunchStats) {
     ipcWebContents.send(this.window.webContents, 'launch-timing-stats', stats)
@@ -323,6 +308,32 @@ export class AppWindow {
     if (appMenu) {
       const menu = menuFromElectronMenu(appMenu)
       ipcWebContents.send(this.window.webContents, 'app-menu', menu)
+    }
+  }
+
+  /** Handle when a modal dialog is opened. */
+  public dialogDidOpen() {
+    if (this.window.isFocused()) {
+      // No additional notifications are needed.
+      return
+    }
+    // Care is taken to mimic OS dialog behaviors.
+    if (__DARWIN__) {
+      // macOS beeps when a modal dialog is opened.
+      shell.beep()
+      // See https://developer.apple.com/documentation/appkit/nsapplication/1428358-requestuserattention
+      // "If the inactive app presents a modal panel, this method will be invoked with NSCriticalRequest
+      // automatically. The modal panel is not brought to the front for an inactive app."
+      // NOTE: flashFrame() uses the 'informational' level, so we need to explicitly bounce the dock
+      // with the 'critical' level in order to that described behavior.
+      app.dock.bounce('critical')
+    } else {
+      // See https://learn.microsoft.com/en-us/windows/win32/uxguide/winenv-taskbar#taskbar-button-flashing
+      // "If an inactive program requires immediate attention,
+      // flash its taskbar button to draw attention and leave it highlighted."
+      // It advises not to beep.
+      this.window.once('focus', () => this.window.flashFrame(false))
+      this.window.flashFrame(true)
     }
   }
 
@@ -417,9 +428,9 @@ export class AppWindow {
     })
   }
 
-  public checkForUpdates(url: string) {
+  public async checkForUpdates(url: string) {
     try {
-      autoUpdater.setFeedURL({ url })
+      autoUpdater.setFeedURL({ url: await trySetUpdaterGuid(url) })
       autoUpdater.checkForUpdates()
     } catch (e) {
       return e
@@ -480,5 +491,20 @@ export class AppWindow {
   public async showOpenDialog(options: Electron.OpenDialogOptions) {
     const { filePaths } = await dialog.showOpenDialog(this.window, options)
     return filePaths.length > 0 ? filePaths[0] : null
+  }
+}
+
+const trySetUpdaterGuid = async (url: string) => {
+  try {
+    const id = await getUpdaterGUID()
+    if (!id) {
+      return url
+    }
+
+    const parsed = new URL(url)
+    parsed.searchParams.set('guid', id)
+    return parsed.toString()
+  } catch (e) {
+    return url
   }
 }

@@ -1,6 +1,5 @@
 import * as React from 'react'
 import {
-  FilterList,
   IFilterListGroup,
   IFilterListItem,
   SelectionSource,
@@ -21,6 +20,10 @@ import { startTimer } from '../lib/timing'
 import { DragType } from '../../models/drag-drop'
 import { dragAndDropManager } from '../../lib/drag-and-drop-manager'
 import { formatRelative } from '../../lib/format-relative'
+import { AriaLiveContainer } from '../accessibility/aria-live-container'
+import { SectionFilterList } from '../lib/section-filter-list'
+import { generatePullRequestContextMenuItems } from './pull-request-list-item-context-menu'
+import { showContextualMenu } from '../../lib/menu-item'
 
 interface IPullRequestListItem extends IFilterListItem {
   readonly id: string
@@ -40,9 +43,6 @@ interface IPullRequestListProps {
   /** Is the default branch currently checked out? */
   readonly isOnDefaultBranch: boolean
 
-  /** Called when the user wants to dismiss the foldout. */
-  readonly onDismiss: () => void
-
   /** Called when the user opts to create a branch */
   readonly onCreateBranch: () => void
 
@@ -50,14 +50,6 @@ interface IPullRequestListProps {
   readonly onSelectionChanged: (
     pullRequest: PullRequest | null,
     source: SelectionSource
-  ) => void
-
-  /**
-   * Called when a key down happens in the filter field. Users have a chance to
-   * respond or cancel the default behavior by calling `preventDefault`.
-   */
-  readonly onFilterKeyDown?: (
-    event: React.KeyboardEvent<HTMLInputElement>
   ) => void
 
   readonly dispatcher: Dispatcher
@@ -82,6 +74,7 @@ interface IPullRequestListState {
   readonly filterText: string
   readonly groupedItems: ReadonlyArray<IFilterListGroup<IPullRequestListItem>>
   readonly selectedItem: IPullRequestListItem | null
+  readonly screenReaderStateMessage: string | null
 }
 
 function resolveSelectedItem(
@@ -120,6 +113,7 @@ export class PullRequestList extends React.Component<
       filterText: '',
       groupedItems: [group],
       selectedItem,
+      screenReaderStateMessage: null,
     }
   }
 
@@ -130,27 +124,47 @@ export class PullRequestList extends React.Component<
       nextProps,
       this.state.selectedItem
     )
-    this.setState({ groupedItems: [group], selectedItem })
+
+    const loadingStarted =
+      !this.props.isLoadingPullRequests && nextProps.isLoadingPullRequests
+    const loadingComplete =
+      this.props.isLoadingPullRequests && !nextProps.isLoadingPullRequests
+    const numPullRequests = this.props.pullRequests.length
+    const plural = numPullRequests === 1 ? '' : 's'
+    const screenReaderStateMessage = loadingStarted
+      ? 'Hang Tight. Loading pull requests as fast as I can!'
+      : loadingComplete
+      ? `${numPullRequests} pull request${plural} found`
+      : null
+
+    this.setState({
+      groupedItems: [group],
+      selectedItem,
+      screenReaderStateMessage,
+    })
   }
 
   public render() {
     return (
-      <FilterList<IPullRequestListItem>
-        className="pull-request-list"
-        rowHeight={RowHeight}
-        groups={this.state.groupedItems}
-        selectedItem={this.state.selectedItem}
-        renderItem={this.renderPullRequest}
-        filterText={this.state.filterText}
-        onFilterTextChanged={this.onFilterTextChanged}
-        invalidationProps={this.props.pullRequests}
-        onItemClick={this.onItemClick}
-        onSelectionChanged={this.onSelectionChanged}
-        onFilterKeyDown={this.props.onFilterKeyDown}
-        renderGroupHeader={this.renderListHeader}
-        renderNoItems={this.renderNoItems}
-        renderPostFilter={this.renderPostFilter}
-      />
+      <>
+        <SectionFilterList<IPullRequestListItem>
+          className="pull-request-list"
+          rowHeight={RowHeight}
+          groups={this.state.groupedItems}
+          selectedItem={this.state.selectedItem}
+          renderItem={this.renderPullRequest}
+          filterText={this.state.filterText}
+          onFilterTextChanged={this.onFilterTextChanged}
+          invalidationProps={this.props.pullRequests}
+          onItemContextMenu={this.onPullRequestItemContextMenu}
+          onItemClick={this.onItemClick}
+          onSelectionChanged={this.onSelectionChanged}
+          renderGroupHeader={this.renderListHeader}
+          renderNoItems={this.renderNoItems}
+          renderPostFilter={this.renderPostFilter}
+        />
+        <AriaLiveContainer message={this.state.screenReaderStateMessage} />
+      </>
     )
   }
 
@@ -188,6 +202,21 @@ export class PullRequestList extends React.Component<
         onMouseLeave={this.onMouseLeavePullRequest}
       />
     )
+  }
+
+  private onPullRequestItemContextMenu = (
+    item: IPullRequestListItem,
+    event: React.MouseEvent<HTMLDivElement>
+  ): void => {
+    event.preventDefault()
+
+    const items = generatePullRequestContextMenuItems({
+      onViewPullRequestOnGitHub: () => {
+        this.props.dispatcher.showPullRequestByPR(item.pullRequest)
+      },
+    })
+
+    showContextualMenu(items)
   }
 
   private onMouseEnterPullRequest = (
@@ -228,7 +257,7 @@ export class PullRequestList extends React.Component<
       prNumber === selectedPullRequest.pullRequestNumber
     ) {
       dispatcher.endMultiCommitOperation(repository)
-      dispatcher.recordDragStartedAndCanceled()
+      dispatcher.incrementMetric('dragStartedAndCanceledCount')
       return
     }
 
@@ -289,11 +318,14 @@ export class PullRequestList extends React.Component<
   }
 
   private renderPostFilter = () => {
+    const tooltip = 'Refresh the list of pull requests'
+
     return (
       <Button
         disabled={this.props.isLoadingPullRequests}
         onClick={this.onRefreshPullRequests}
-        tooltip="Refresh the list of pull requests"
+        ariaLabel={tooltip}
+        tooltip={tooltip}
       >
         <Octicon
           symbol={syncClockwise}

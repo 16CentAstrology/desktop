@@ -1,7 +1,7 @@
 import * as React from 'react'
 import classNames from 'classnames'
 import { Octicon } from '../octicons'
-import * as OcticonSymbol from '../octicons/octicons.generated'
+import * as octicons from '../octicons/octicons.generated'
 import { CIStatus } from './ci-status'
 import { HighlightText } from '../lib/highlight-text'
 import { IMatches } from '../../lib/fuzzy-find'
@@ -11,6 +11,7 @@ import { dragAndDropManager } from '../../lib/drag-and-drop-manager'
 import { DropTargetType } from '../../models/drag-drop'
 import { getPullRequestCommitRef } from '../../models/pull-request'
 import { formatRelative } from '../../lib/format-relative'
+import { TooltippedContent } from '../lib/tooltipped-content'
 
 export interface IPullRequestListItemProps {
   /** The title. */
@@ -126,6 +127,10 @@ export class PullRequestListItem extends React.Component<
     })
 
     return (
+      /**
+       * This a11y linter is a false-positive as the element is a drop target
+       * facilitating our drag and drop functionality for cherry-picking.
+       */
       // eslint-disable-next-line jsx-a11y/no-static-element-interactions
       <div
         className={className}
@@ -138,18 +143,28 @@ export class PullRequestListItem extends React.Component<
             className="icon"
             symbol={
               this.props.draft
-                ? OcticonSymbol.gitPullRequestDraft
-                : OcticonSymbol.gitPullRequest
+                ? octicons.gitPullRequestDraft
+                : octicons.gitPullRequest
             }
           />
         </div>
         <div className="info">
-          <div className="title" title={title}>
+          <TooltippedContent
+            tagName="div"
+            className="title"
+            tooltip={title}
+            onlyWhenOverflowed={true}
+          >
             <HighlightText text={title || ''} highlight={matches.title} />
-          </div>
-          <div className="subtitle" title={subtitle}>
+          </TooltippedContent>
+          <TooltippedContent
+            tagName="div"
+            className="subtitle"
+            tooltip={subtitle}
+            onlyWhenOverflowed={true}
+          >
             <HighlightText text={subtitle || ''} highlight={matches.subtitle} />
-          </div>
+          </TooltippedContent>
         </div>
         {this.renderPullRequestStatus()}
       </div>

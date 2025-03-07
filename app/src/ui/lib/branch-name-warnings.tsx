@@ -3,15 +3,14 @@ import { Branch, BranchType } from '../../models/branch'
 
 import { Row } from './row'
 import { Octicon } from '../octicons'
-import * as OcticonSymbol from '../octicons/octicons.generated'
+import * as octicons from '../octicons/octicons.generated'
 import { Ref } from './ref'
-import { IStashEntry } from '../../models/stash-entry'
 
 export function renderBranchHasRemoteWarning(branch: Branch) {
   if (branch.upstream != null) {
     return (
       <Row className="warning-helper-text">
-        <Octicon symbol={OcticonSymbol.alert} />
+        <Octicon symbol={octicons.alert} />
         <p>
           This branch is tracking <Ref>{branch.upstream}</Ref> and renaming this
           branch will not change the branch name on the remote.
@@ -38,24 +37,9 @@ export function renderBranchNameExistsOnRemoteWarning(
 
   return (
     <Row className="warning-helper-text">
-      <Octicon symbol={OcticonSymbol.alert} />
+      <Octicon symbol={octicons.alert} />
       <p>
         A branch named <Ref>{sanitizedName}</Ref> already exists on the remote.
-      </p>
-    </Row>
-  )
-}
-
-export function renderStashWillBeLostWarning(stash: IStashEntry | null) {
-  if (stash === null) {
-    return null
-  }
-  return (
-    <Row className="warning-helper-text">
-      <Octicon symbol={OcticonSymbol.alert} />
-      <p>
-        Your current stashed changes on this branch will no longer be visible in
-        GitHub Desktop if the branch is renamed.
       </p>
     </Row>
   )

@@ -1,11 +1,7 @@
-import { ChildProcess } from 'child_process'
-
-import { git } from './core'
-import { spawnAndComplete } from './spawn'
+import { coerceToBuffer, git, isMaxBufferExceededError } from './core'
 
 import { Repository } from '../../models/repository'
 import { GitError } from 'dugite'
-import { enableMultiCommitDiffs } from '../feature-flag'
 
 /**
  * Retrieve the binary contents of a blob from the repository at a given
@@ -23,30 +19,15 @@ import { enableMultiCommitDiffs } from '../feature-flag'
  * @param path       - The file path, relative to the repository
  *                     root from where to read the blob contents
  */
-export async function getBlobContents(
+export const getBlobContents = (
   repository: Repository,
   commitish: string,
   path: string
-): Promise<Buffer> {
-  const successExitCodes = new Set([0, 1])
-  const setBinaryEncoding: (process: ChildProcess) => void = cb => {
-    // If Node.js encounters a synchronous runtime error while spawning
-    // `stdout` will be undefined and the error will be emitted asynchronously
-    if (cb.stdout) {
-      cb.stdout.setEncoding('binary')
-    }
-  }
-
-  const args = ['show', `${commitish}:${path}`]
-  const opts = {
-    successExitCodes,
-    processCallback: setBinaryEncoding,
-  }
-
-  const blobContents = await git(args, repository.path, 'getBlobContents', opts)
-
-  return Buffer.from(blobContents.stdout, 'binary')
-}
+) =>
+  git(['show', `${commitish}:${path}`], repository.path, 'getBlobContents', {
+    successExitCodes: new Set([0, 1]),
+    encoding: 'buffer',
+  }).then(r => r.stdout)
 
 /**
  * Retrieve some or all binary contents of a blob from the repository
@@ -76,28 +57,12 @@ export async function getPartialBlobContents(
   path: string,
   length: number
 ): Promise<Buffer | null> {
-  if (enableMultiCommitDiffs()) {
-    return getPartialBlobContentsCatchPathNotInRef(
-      repository,
-      commitish,
-      path,
-      length
-    )
-  }
-
-  const successExitCodes = new Set([0, 1])
-
-  const args = ['show', `${commitish}:${path}`]
-
-  const { output } = await spawnAndComplete(
-    args,
-    repository.path,
-    'getPartialBlobContents',
-    successExitCodes,
+  return getPartialBlobContentsCatchPathNotInRef(
+    repository,
+    commitish,
+    path,
     length
   )
-
-  return output
 }
 
 export async function getPartialBlobContentsCatchPathNotInRef(
@@ -108,19 +73,15 @@ export async function getPartialBlobContentsCatchPathNotInRef(
 ): Promise<Buffer | null> {
   const args = ['show', `${commitish}:${path}`]
 
-  const result = await git(
-    args,
-    repository.path,
-    'getPartialBlobContentsCatchPathNotInRef',
-    {
-      maxBuffer: length,
-      expectedErrors: new Set([GitError.PathExistsButNotInRef]),
-    }
-  )
-
-  if (result.gitError === GitError.PathExistsButNotInRef) {
-    return null
-  }
-
-  return Buffer.from(result.combinedOutput)
+  return git(args, repository.path, 'getPartialBlobContentsCatchPathNotInRef', {
+    maxBuffer: length,
+    expectedErrors: new Set([GitError.PathExistsButNotInRef]),
+    encoding: 'buffer',
+  })
+    .then(r =>
+      r.gitError === GitError.PathExistsButNotInRef ? null : r.stdout
+    )
+    .catch(e =>
+      isMaxBufferExceededError(e) ? coerceToBuffer(e.stdout) : Promise.reject(e)
+    )
 }

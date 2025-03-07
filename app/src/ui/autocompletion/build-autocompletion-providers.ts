@@ -4,6 +4,7 @@ import {
   Repository,
 } from '../../models/repository'
 import {
+  CoAuthorAutocompletionProvider,
   EmojiAutocompletionProvider,
   IAutocompletionProvider,
   IssuesAutocompletionProvider,
@@ -12,11 +13,12 @@ import {
 import { Dispatcher } from '../dispatcher'
 import { GitHubUserStore, IssuesStore } from '../../lib/stores'
 import { Account } from '../../models/account'
+import { Emoji } from '../../lib/emoji'
 
 export function buildAutocompletionProviders(
   repository: Repository,
   dispatcher: Dispatcher,
-  emoji: Map<string, string>,
+  emoji: Map<string, Emoji>,
   issuesStore: IssuesStore,
   gitHubUserStore: GitHubUserStore,
   accounts: ReadonlyArray<Account>
@@ -42,7 +44,16 @@ export function buildAutocompletionProviders(
     const account = accounts.find(a => a.endpoint === gitHubRepository.endpoint)
 
     autocompletionProviders.push(
-      new UserAutocompletionProvider(gitHubUserStore, gitHubRepository, account)
+      new UserAutocompletionProvider(
+        gitHubUserStore,
+        gitHubRepository,
+        account
+      ),
+      new CoAuthorAutocompletionProvider(
+        gitHubUserStore,
+        gitHubRepository,
+        account
+      )
     )
   }
 

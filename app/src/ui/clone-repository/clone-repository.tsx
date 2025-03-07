@@ -24,6 +24,7 @@ import { ClickSource } from '../lib/list'
 import { OkCancelButtonGroup } from '../dialog/ok-cancel-button-group'
 import { showOpenDialog, showSaveDialog } from '../main-process-proxy'
 import { readdir } from 'fs/promises'
+import { isTopMostDialog } from '../dialog/is-top-most'
 
 interface ICloneRepositoryProps {
   readonly dispatcher: Dispatcher
@@ -65,6 +66,9 @@ interface ICloneRepositoryProps {
    * available for cloning.
    */
   readonly onRefreshRepositories: (account: Account) => void
+
+  /** Whether the dialog is the top most in the dialog stack */
+  readonly isTopMost: boolean
 }
 
 interface ICloneRepositoryState {
@@ -148,6 +152,16 @@ export class CloneRepository extends React.Component<
   ICloneRepositoryProps,
   ICloneRepositoryState
 > {
+  private checkIsTopMostDialog = isTopMostDialog(
+    () => {
+      this.validatePath()
+      window.addEventListener('focus', this.onWindowFocus)
+    },
+    () => {
+      window.removeEventListener('focus', this.onWindowFocus)
+    }
+  )
+
   public constructor(props: ICloneRepositoryProps) {
     super(props)
 
@@ -192,6 +206,8 @@ export class CloneRepository extends React.Component<
     if (prevProps.initialURL !== this.props.initialURL) {
       this.updateUrl(this.props.initialURL || '')
     }
+
+    this.checkIsTopMostDialog(this.props.isTopMost)
   }
 
   public componentDidMount() {
@@ -200,7 +216,11 @@ export class CloneRepository extends React.Component<
       this.updateUrl(initialURL)
     }
 
-    window.addEventListener('focus', this.onWindowFocus)
+    this.checkIsTopMostDialog(this.props.isTopMost)
+  }
+
+  public componentWillUnmount(): void {
+    this.checkIsTopMostDialog(false)
   }
 
   private initializePath = async () => {
@@ -224,10 +244,6 @@ export class CloneRepository extends React.Component<
     this.updateUrl(selectedTabState.url)
   }
 
-  public componentWillUnmount() {
-    window.removeEventListener('focus', this.onWindowFocus)
-  }
-
   public render() {
     const { error } = this.getSelectedTabState()
     return (
@@ -242,18 +258,28 @@ export class CloneRepository extends React.Component<
           onTabClicked={this.onTabClicked}
           selectedIndex={this.props.selectedTab}
         >
-          <span>GitHub.com</span>
-          <span>GitHub Enterprise</span>
-          <span>URL</span>
+          <span id="dotcom-tab">GitHub.com</span>
+          <span id="enterprise-tab">GitHub Enterprise</span>
+          <span id="url-tab">URL</span>
         </TabBar>
 
         {error ? <DialogError>{error.message}</DialogError> : null}
 
-        {this.renderActiveTab()}
+        <div role="tabpanel" aria-labelledby={this.getSelectedTabId()}>
+          {this.renderActiveTab()}
+        </div>
 
         {this.renderFooter()}
       </Dialog>
     )
+  }
+
+  private getSelectedTabId = () => {
+    return this.props.selectedTab === CloneRepositoryTab.DotCom
+      ? 'dotcom-tab'
+      : this.props.selectedTab === CloneRepositoryTab.Enterprise
+      ? 'enterprise-tab'
+      : 'url-tab'
   }
 
   private checkIfCloningDisabled = () => {
@@ -477,8 +503,8 @@ export class CloneRepository extends React.Component<
             onAction={this.signInEnterprise}
           >
             <div>
-              If you have a GitHub Enterprise or AE account at work, sign in to
-              it to get access to your repositories.
+              If you are using GitHub Enterprise at work, sign in to it to get
+              access to your repositories.
             </div>
           </CallToAction>
         )
@@ -679,6 +705,10 @@ export class CloneRepository extends React.Component<
 
     if (this.props.enterpriseAccount) {
       accounts.push(this.props.enterpriseAccount)
+    }
+
+    if (url.endsWith('.wiki.git')) {
+      return { url }
     }
 
     const account = await findAccountForRemoteURL(url, accounts)
