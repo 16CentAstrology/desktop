@@ -2,9 +2,10 @@ import * as React from 'react'
 import { DialogContent } from '../dialog'
 import { Account } from '../../models/account'
 import { GitConfigUserForm } from '../lib/git-config-user-form'
-import { getDotComAPIEndpoint } from '../../lib/api'
 import { Row } from '../lib/row'
-import { RadioButton } from '../lib/radio-button'
+import { RadioGroup } from '../lib/radio-group'
+import { assertNever } from '../../lib/fatal-error'
+import memoizeOne from 'memoize-one'
 
 interface IGitConfigProps {
   readonly account: Account | null
@@ -14,6 +15,7 @@ interface IGitConfigProps {
   readonly email: string
   readonly globalName: string
   readonly globalEmail: string
+  readonly isLoadingGitConfig: boolean
 
   readonly onGitConfigLocationChanged: (value: GitConfigLocation) => void
   readonly onNameChanged: (name: string) => void
@@ -27,40 +29,43 @@ export enum GitConfigLocation {
 
 /** A view for creating or modifying the repository's gitignore file */
 export class GitConfig extends React.Component<IGitConfigProps> {
+  // To avoid recreating the accounts array on every render
+  private getAccounts = memoizeOne((account: Account | null) =>
+    account ? [account] : []
+  )
+
   private onGitConfigLocationChanged = (value: GitConfigLocation) => {
     this.props.onGitConfigLocationChanged(value)
   }
+  private renderConfigOptionLabel = (key: GitConfigLocation) => {
+    switch (key) {
+      case GitConfigLocation.Global:
+        return 'Use my global Git config'
+      case GitConfigLocation.Local:
+        return 'Use a local Git config'
+      default:
+        return assertNever(key, `Unknown git config location: ${key}`)
+    }
+  }
 
   public render() {
-    const isDotComAccount =
-      this.props.account !== null &&
-      this.props.account.endpoint === getDotComAPIEndpoint()
-    const enterpriseAccount = isDotComAccount ? null : this.props.account
-    const dotComAccount = isDotComAccount ? this.props.account : null
+    const configOptions = [GitConfigLocation.Global, GitConfigLocation.Local]
+    const selectionOption =
+      configOptions.find(o => o === this.props.gitConfigLocation) ??
+      GitConfigLocation.Global
 
     return (
       <DialogContent>
         <div className="advanced-section">
-          <h2>For this repository I wish to</h2>
+          <h2 id="git-config-heading">For this repository I wish to</h2>
           <Row>
-            <div>
-              <RadioButton
-                label="Use my global Git config"
-                checked={
-                  this.props.gitConfigLocation === GitConfigLocation.Global
-                }
-                value={GitConfigLocation.Global}
-                onSelected={this.onGitConfigLocationChanged}
-              />
-              <RadioButton
-                label="Use a local Git config"
-                checked={
-                  this.props.gitConfigLocation === GitConfigLocation.Local
-                }
-                value={GitConfigLocation.Local}
-                onSelected={this.onGitConfigLocationChanged}
-              />
-            </div>
+            <RadioGroup<GitConfigLocation>
+              ariaLabelledBy="git-config-heading"
+              selectedKey={selectionOption}
+              radioButtonKeys={configOptions}
+              onSelectionChanged={this.onGitConfigLocationChanged}
+              renderRadioButtonLabelContents={this.renderConfigOptionLabel}
+            />
           </Row>
           <GitConfigUserForm
             email={
@@ -73,11 +78,11 @@ export class GitConfig extends React.Component<IGitConfigProps> {
                 ? this.props.globalName
                 : this.props.name
             }
-            enterpriseAccount={enterpriseAccount}
-            dotComAccount={dotComAccount}
+            accounts={this.getAccounts(this.props.account)}
             disabled={this.props.gitConfigLocation === GitConfigLocation.Global}
             onEmailChanged={this.props.onEmailChanged}
             onNameChanged={this.props.onNameChanged}
+            isLoadingGitConfig={this.props.isLoadingGitConfig}
           />
         </div>
       </DialogContent>

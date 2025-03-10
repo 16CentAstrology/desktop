@@ -29,6 +29,8 @@ import {
   InvalidGitAuthorNameMessage,
 } from '../lib/identifier-rules'
 import { Account } from '../../models/account'
+import { Octicon } from '../octicons'
+import * as octicons from '../octicons/octicons.generated'
 
 interface IRepositorySettingsProps {
   readonly initialSelectedTab?: RepositorySettingsTab
@@ -63,6 +65,7 @@ interface IRepositorySettingsState {
   readonly initialCommitterEmail: string | null
   readonly errors?: ReadonlyArray<JSX.Element | string>
   readonly forkContributionTarget: ForkContributionTarget
+  readonly isLoadingGitConfig: boolean
 }
 
 export class RepositorySettings extends React.Component<
@@ -89,6 +92,7 @@ export class RepositorySettings extends React.Component<
       initialGitConfigLocation: GitConfigLocation.Global,
       initialCommitterName: null,
       initialCommitterEmail: null,
+      isLoadingGitConfig: true,
     }
   }
 
@@ -141,6 +145,7 @@ export class RepositorySettings extends React.Component<
       initialGitConfigLocation: gitConfigLocation,
       initialCommitterName: localCommitterName,
       initialCommitterEmail: localCommitterEmail,
+      isLoadingGitConfig: false,
     })
   }
 
@@ -178,35 +183,35 @@ export class RepositorySettings extends React.Component<
             selectedIndex={this.state.selectedTab}
             type={TabBarType.Vertical}
           >
-            <span>Remote</span>
-            <span>{__DARWIN__ ? 'Ignored Files' : 'Ignored files'}</span>
-            <span>{__DARWIN__ ? 'Git Config' : 'Git config'}</span>
+            <span>
+              <Octicon className="icon" symbol={octicons.server} />
+              Remote
+            </span>
+            <span>
+              <Octicon className="icon" symbol={octicons.file} />
+              {__DARWIN__ ? 'Ignored Files' : 'Ignored files'}
+            </span>
+            <span>
+              <Octicon className="icon" symbol={octicons.gitCommit} />
+              {__DARWIN__ ? 'Git Config' : 'Git config'}
+            </span>
             {showForkSettings && (
-              <span>{__DARWIN__ ? 'Fork Behavior' : 'Fork behavior'}</span>
+              <span>
+                <Octicon className="icon" symbol={octicons.repoForked} />
+                {__DARWIN__ ? 'Fork Behavior' : 'Fork behavior'}
+              </span>
             )}
           </TabBar>
 
           <div className="active-tab">{this.renderActiveTab()}</div>
         </div>
-        {this.renderFooter()}
+        <DialogFooter>
+          <OkCancelButtonGroup
+            okButtonText="Save"
+            okButtonDisabled={this.state.saveDisabled}
+          />
+        </DialogFooter>
       </Dialog>
-    )
-  }
-
-  private renderFooter() {
-    const tab = this.state.selectedTab
-    const remote = this.state.remote
-    if (tab === RepositorySettingsTab.Remote && !remote) {
-      return null
-    }
-
-    return (
-      <DialogFooter>
-        <OkCancelButtonGroup
-          okButtonText="Save"
-          okButtonDisabled={this.state.saveDisabled}
-        />
-      </DialogFooter>
     )
   }
 
@@ -263,6 +268,7 @@ export class RepositorySettings extends React.Component<
             globalEmail={this.state.globalCommitterEmail}
             onNameChanged={this.onCommitterNameChanged}
             onEmailChanged={this.onCommitterEmailChanged}
+            isLoadingGitConfig={this.state.isLoadingGitConfig}
           />
         )
       }
@@ -288,12 +294,14 @@ export class RepositorySettings extends React.Component<
     const errors = new Array<JSX.Element | string>()
 
     if (this.state.remote && this.props.remote) {
-      if (this.state.remote.url !== this.props.remote.url) {
+      const trimmedUrl = this.state.remote.url.trim()
+
+      if (trimmedUrl !== this.props.remote.url) {
         try {
           await this.props.dispatcher.setRemoteURL(
             this.props.repository,
             this.props.remote.name,
-            this.state.remote.url
+            trimmedUrl
           )
         } catch (e) {
           log.error(

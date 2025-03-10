@@ -20,6 +20,7 @@ import {
 } from '../../lib/conflicts'
 import { ManualConflictResolution } from '../../../models/manual-conflict-resolution'
 import { OkCancelButtonGroup } from '../../dialog/ok-cancel-button-group'
+import { DialogSuccess } from '../../dialog/success'
 
 interface IConflictsDialogProps {
   readonly dispatcher: Dispatcher
@@ -45,6 +46,8 @@ interface IConflictsDialogProps {
 interface IConflictsDialogState {
   readonly isCommitting: boolean
   readonly isAborting: boolean
+  readonly isFileResolutionOptionsMenuOpen: boolean
+  readonly countResolved: number | null
 }
 
 /**
@@ -61,6 +64,8 @@ export class ConflictsDialog extends React.Component<
     this.state = {
       isCommitting: false,
       isAborting: false,
+      isFileResolutionOptionsMenuOpen: false,
+      countResolved: null,
     }
   }
 
@@ -94,6 +99,19 @@ export class ConflictsDialog extends React.Component<
     }
   }
 
+  public componentDidUpdate(): void {
+    const { workingDirectory, manualResolutions } = this.props
+
+    const resolvedConflicts = getResolvedFiles(
+      workingDirectory,
+      manualResolutions
+    )
+
+    if (resolvedConflicts.length !== (this.state.countResolved ?? 0)) {
+      this.setState({ countResolved: resolvedConflicts.length })
+    }
+  }
+
   /**
    *  Invokes submit callback and dismisses modal
    */
@@ -116,6 +134,12 @@ export class ConflictsDialog extends React.Component<
   private openThisRepositoryInShell = () =>
     this.props.openRepositoryInShell(this.props.repository)
 
+  private setIsFileResolutionOptionsMenuOpen = (
+    isFileResolutionOptionsMenuOpen: boolean
+  ) => {
+    this.setState({ isFileResolutionOptionsMenuOpen })
+  }
+
   /**
    *  Renders the list of conflicts in the dialog
    */
@@ -136,6 +160,10 @@ export class ConflictsDialog extends React.Component<
                 manualResolution: this.props.manualResolutions.get(f.path),
                 ourBranch: this.props.ourBranch,
                 theirBranch: this.props.theirBranch,
+                isFileResolutionOptionsMenuOpen:
+                  this.state.isFileResolutionOptionsMenuOpen,
+                setIsFileResolutionOptionsMenuOpen:
+                  this.setIsFileResolutionOptionsMenuOpen,
               })
             : null
         )}
@@ -157,6 +185,38 @@ export class ConflictsDialog extends React.Component<
         {this.renderUnmergedFiles(unmergedFiles)}
         {renderShellLink(this.openThisRepositoryInShell)}
       </>
+    )
+  }
+
+  /**
+   * Renders the banner based on count of resolved files.
+   *
+   * If the count of resolved files is null, then the banner is
+   * not rendered as no conflicts have been resolved, yet. If the count of resolved
+   * files is 0, then there have been conflicts resolved, but they have been
+   * undone, we show an undone banner.
+   */
+  public renderBanner(conflictedFilesCount: number) {
+    const { countResolved } = this.state
+    if (countResolved === null) {
+      return
+    }
+
+    if (countResolved === 0) {
+      return <DialogSuccess>All resolutions have been undone.</DialogSuccess>
+    }
+
+    if (conflictedFilesCount === 0) {
+      return (
+        <DialogSuccess>All conflicted files have been resolved. </DialogSuccess>
+      )
+    }
+
+    const conflictPluralized = countResolved === 1 ? 'file has' : 'files have'
+    return (
+      <DialogSuccess>
+        {countResolved} conflicted {conflictPluralized} been resolved.
+      </DialogSuccess>
     )
   }
 
@@ -183,13 +243,14 @@ export class ConflictsDialog extends React.Component<
     return (
       <Dialog
         id="conflicts-dialog"
-        dismissable={!this.state.isCommitting}
+        dismissDisabled={this.state.isCommitting}
         onDismissed={this.props.onDismissed}
         onSubmit={this.onSubmit}
         title={headerTitle}
         loading={this.state.isCommitting}
         disabled={this.state.isCommitting}
       >
+        {this.renderBanner(conflictedFiles.length)}
         <DialogContent>
           {this.renderContent(unmergedFiles, conflictedFiles.length)}
         </DialogContent>

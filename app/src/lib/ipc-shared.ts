@@ -16,6 +16,7 @@ import { ThemeSource } from '../ui/lib/theme-source'
 import { DesktopNotificationPermission } from 'desktop-notifications/dist/notification-permission'
 import { NotificationCallback } from 'desktop-notifications/dist/notification-callback'
 import { DesktopAliveEvent } from './stores/alive-store'
+import { CLIAction } from './cli-action'
 
 /**
  * Defines the simplex IPC channel names we use from the renderer
@@ -25,6 +26,7 @@ import { DesktopAliveEvent } from './stores/alive-store'
  */
 export type RequestChannels = {
   'select-all-window-contents': () => void
+  'dialog-did-open': () => void
   'update-menu-state': (
     state: Array<{ id: MenuIDs; state: IMenuItemState }>
   ) => void
@@ -56,6 +58,7 @@ export type RequestChannels = {
   'app-menu': (menu: IMenu) => void
   'launch-timing-stats': (stats: ILaunchStats) => void
   'url-action': (action: URLActionType) => void
+  'cli-action': (action: CLIAction) => void
   'certificate-error': (
     certificate: Electron.Certificate,
     error: string,
@@ -81,6 +84,8 @@ export type RequestChannels = {
   'notification-event': NotificationCallback<DesktopAliveEvent>
   'set-window-zoom-factor': (zoomFactor: number) => void
   'show-installing-update': () => void
+  'install-windows-cli': () => void
+  'uninstall-windows-cli': () => void
 }
 
 /**

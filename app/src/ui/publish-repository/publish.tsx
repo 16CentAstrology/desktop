@@ -1,11 +1,14 @@
 import * as React from 'react'
 import { PublishRepository } from './publish-repository'
 import { Dispatcher } from '../dispatcher'
-import { Account } from '../../models/account'
+import {
+  Account,
+  isDotComAccount,
+  isEnterpriseAccount,
+} from '../../models/account'
 import { Repository } from '../../models/repository'
 import { Dialog, DialogFooter, DialogContent, DialogError } from '../dialog'
 import { TabBar } from '../tab-bar'
-import { getDotComAPIEndpoint } from '../../lib/api'
 import { assertNever, fatalError } from '../../lib/fatal-error'
 import { CallToAction } from '../lib/call-to-action'
 import { getGitDescription } from '../../lib/git'
@@ -139,16 +142,23 @@ export class Publish extends React.Component<IPublishProps, IPublishState> {
           onTabClicked={this.onTabClicked}
           selectedIndex={this.state.currentTab}
         >
-          <span>GitHub.com</span>
-          <span>GitHub Enterprise</span>
+          <span id="dotcom-tab">GitHub.com</span>
+          <span id="enterprise-tab">GitHub Enterprise</span>
         </TabBar>
 
         {currentTabState.error ? (
           <DialogError>{currentTabState.error.message}</DialogError>
         ) : null}
 
-        {this.renderContent()}
-        {this.renderFooter()}
+        <div
+          role="tabpanel"
+          aria-labelledby={
+            currentTabState.kind === 'dotcom' ? 'dotcom-tab' : 'enterprise-tab'
+          }
+        >
+          {this.renderContent()}
+          {this.renderFooter()}
+        </div>
       </Dialog>
     )
   }
@@ -209,9 +219,9 @@ export class Publish extends React.Component<IPublishProps, IPublishState> {
     const accounts = this.props.accounts
     switch (tab) {
       case PublishTab.DotCom:
-        return accounts.find(a => a.endpoint === getDotComAPIEndpoint()) || null
+        return accounts.find(isDotComAccount) ?? null
       case PublishTab.Enterprise:
-        return accounts.find(a => a.endpoint !== getDotComAPIEndpoint()) || null
+        return accounts.find(isEnterpriseAccount) ?? null
       default:
         return assertNever(tab, `Unknown tab: ${tab}`)
     }
@@ -235,8 +245,8 @@ export class Publish extends React.Component<IPublishProps, IPublishState> {
             onAction={this.signInEnterprise}
           >
             <div>
-              If you have a GitHub Enterprise or AE account at work, sign in to
-              it to get access to your repositories.
+              If you are using GitHub Enterprise at work, sign in to it to get
+              access to your repositories.
             </div>
           </CallToAction>
         )

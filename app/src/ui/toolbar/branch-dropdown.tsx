@@ -1,12 +1,14 @@
 import * as React from 'react'
 import { Dispatcher } from '../dispatcher'
-import * as OcticonSymbol from '../octicons/octicons.generated'
-import { syncClockwise } from '../octicons'
+import * as octicons from '../octicons/octicons.generated'
+import { OcticonSymbol, syncClockwise } from '../octicons'
 import { Repository } from '../../models/repository'
+import { Resizable } from '../resizable'
 import { TipState } from '../../models/tip'
 import { ToolbarDropdown, DropdownState } from './dropdown'
 import {
   FoldoutType,
+  IConstrainedValue,
   IRepositoryState,
   isRebaseConflictState,
 } from '../../lib/app-state'
@@ -23,6 +25,8 @@ import { BranchType, Branch } from '../../models/branch'
 import { PopupType } from '../../models/popup'
 import { generateBranchContextMenuItems } from '../branches/branch-list-item-context-menu'
 import { showContextualMenu } from '../../lib/menu-item'
+import { Emoji } from '../../lib/emoji'
+import { enableResizingToolbarButtons } from '../../lib/feature-flag'
 
 interface IBranchDropdownProps {
   readonly dispatcher: Dispatcher
@@ -32,6 +36,9 @@ interface IBranchDropdownProps {
 
   /** The current repository state as derived from AppState */
   readonly repositoryState: IRepositoryState
+
+  /** The width of the resizable branch dropdown button, as derived from AppState. */
+  readonly branchDropdownWidth: IConstrainedValue
 
   /** Whether or not the branch dropdown is currently open */
   readonly isOpen: boolean
@@ -62,25 +69,25 @@ interface IBranchDropdownProps {
   readonly showCIStatusPopover: boolean
 
   /** Map from the emoji shortcut (e.g., :+1:) to the image's local path. */
-  readonly emoji: Map<string, string>
-}
-interface IBranchDropdownState {
-  readonly badgeBottom: number
+  readonly emoji: Map<string, Emoji>
+
+  /** Whether the dropdown will trap focus or not. Defaults to true.
+   *
+   * Example of usage: If a dropdown is open and then a dialog subsequently, the
+   * focus trap logic will stop propagation of the focus event to the dialog.
+   * Thus, we want to disable this when dialogs are open since they will be
+   * using the dialog focus management.
+   */
+  readonly enableFocusTrap: boolean
+
+  readonly underlineLinks: boolean
 }
 
 /**
  * A drop down for selecting the currently checked out branch.
  */
-export class BranchDropdown extends React.Component<
-  IBranchDropdownProps,
-  IBranchDropdownState
-> {
-  public constructor(props: IBranchDropdownProps) {
-    super(props)
-    this.state = {
-      badgeBottom: 0,
-    }
-  }
+export class BranchDropdown extends React.Component<IBranchDropdownProps> {
+  private badgeRef: HTMLElement | null = null
 
   private renderBranchFoldout = (): JSX.Element | null => {
     const repositoryState = this.props.repositoryState
@@ -103,6 +110,7 @@ export class BranchDropdown extends React.Component<
         emoji={this.props.emoji}
         onDeleteBranch={this.onDeleteBranch}
         onRenameBranch={this.onRenameBranch}
+        underlineLinks={this.props.underlineLinks}
       />
     )
   }
@@ -117,14 +125,14 @@ export class BranchDropdown extends React.Component<
   }
 
   public render() {
-    const { repositoryState } = this.props
+    const { repositoryState, enableFocusTrap } = this.props
     const { branchesState, checkoutProgress, changesState } = repositoryState
     const { tip } = branchesState
     const { conflictState } = changesState
 
     const tipKind = tip.kind
 
-    let icon: OcticonSymbol.OcticonSymbolType = OcticonSymbol.gitBranch
+    let icon: OcticonSymbol = octicons.gitBranch
     let iconClassName: string | undefined = undefined
     let title: string
     let description = __DARWIN__ ? 'Current Branch' : 'Current branch'
@@ -133,7 +141,7 @@ export class BranchDropdown extends React.Component<
     let tooltip: string
 
     if (this.props.currentPullRequest) {
-      icon = OcticonSymbol.gitPullRequest
+      icon = octicons.gitPullRequest
     }
 
     if (tip.kind === TipState.Unknown) {
@@ -148,7 +156,7 @@ export class BranchDropdown extends React.Component<
     } else if (tip.kind === TipState.Detached) {
       title = `On ${tip.currentSha.substring(0, 7)}`
       tooltip = 'Currently on a detached HEAD'
-      icon = OcticonSymbol.gitCommit
+      icon = octicons.gitCommit
       description = 'Detached HEAD'
     } else if (tip.kind === TipState.Valid) {
       title = tooltip = tip.branch.name
@@ -159,15 +167,15 @@ export class BranchDropdown extends React.Component<
     let progressValue: number | undefined = undefined
 
     if (checkoutProgress) {
-      title = checkoutProgress.targetBranch
-      description = __DARWIN__ ? 'Switching to Branch' : 'Switching to branch'
+      title = checkoutProgress.target
+      description = checkoutProgress.description
 
       if (checkoutProgress.value > 0) {
         const friendlyProgress = Math.round(checkoutProgress.value * 100)
         description = `${description} (${friendlyProgress}%)`
       }
 
-      tooltip = `Switching to ${checkoutProgress.targetBranch}`
+      tooltip = `Checking out ${checkoutProgress.target}`
       progressValue = checkoutProgress.value
       icon = syncClockwise
       iconClassName = 'spin'
@@ -175,7 +183,7 @@ export class BranchDropdown extends React.Component<
     } else if (conflictState !== null && isRebaseConflictState(conflictState)) {
       title = conflictState.targetBranch
       description = 'Rebasing branch'
-      icon = OcticonSymbol.gitBranch
+      icon = octicons.gitBranch
       canOpen = false
       disabled = true
       tooltip = `Rebasing ${conflictState.targetBranch}`
@@ -183,36 +191,94 @@ export class BranchDropdown extends React.Component<
 
     const isOpen = this.props.isOpen
     const currentState: DropdownState = isOpen && canOpen ? 'open' : 'closed'
-    const buttonClassName = classNames('nudge-arrow', {
+    const buttonClassName = classNames('branch-toolbar-button', 'nudge-arrow', {
       'nudge-arrow-up': this.props.shouldNudge,
     })
 
+    if (!enableResizingToolbarButtons()) {
+      return (
+        <>
+          <ToolbarDropdown
+            className="branch-button"
+            icon={icon}
+            iconClassName={iconClassName}
+            title={title}
+            description={description}
+            onContextMenu={this.onBranchToolbarButtonContextMenu}
+            tooltip={isOpen ? undefined : tooltip}
+            onDropdownStateChanged={this.onDropDownStateChanged}
+            dropdownContentRenderer={this.renderBranchFoldout}
+            dropdownState={currentState}
+            disabled={disabled}
+            showDisclosureArrow={canOpen}
+            progressValue={progressValue}
+            buttonClassName={buttonClassName}
+            onMouseEnter={this.onMouseEnter}
+            onlyShowTooltipWhenOverflowed={true}
+            isOverflowed={isDescriptionOverflowed}
+            enableFocusTrap={enableFocusTrap}
+          >
+            {this.renderPullRequestInfo()}
+          </ToolbarDropdown>
+          {this.props.showCIStatusPopover && this.renderPopover()}
+        </>
+      )
+    }
+
+    // Properties to override the default foldout style for the branch dropdown.
+    // The min width of the foldout is different from `branchDropdownWidth.min`
+    // because the branches list foldout min width we want set to 365px instead.
+    const foldoutStyleOverrides: React.CSSProperties = {
+      width: this.props.branchDropdownWidth.value,
+      maxWidth: this.props.branchDropdownWidth.max,
+      minWidth: 365,
+    }
+
     return (
       <>
-        <ToolbarDropdown
-          className="branch-button"
-          icon={icon}
-          iconClassName={iconClassName}
-          title={title}
-          description={description}
-          onContextMenu={this.onBranchToolbarButtonContextMenu}
-          tooltip={isOpen ? undefined : tooltip}
-          onDropdownStateChanged={this.onDropDownStateChanged}
-          dropdownContentRenderer={this.renderBranchFoldout}
-          dropdownState={currentState}
-          disabled={disabled}
-          showDisclosureArrow={canOpen}
-          progressValue={progressValue}
-          buttonClassName={buttonClassName}
-          onMouseEnter={this.onMouseEnter}
-          onlyShowTooltipWhenOverflowed={true}
-          isOverflowed={isDescriptionOverflowed}
+        <Resizable
+          width={this.props.branchDropdownWidth.value}
+          onReset={this.onReset}
+          onResize={this.onResize}
+          maximumWidth={this.props.branchDropdownWidth.max}
+          minimumWidth={this.props.branchDropdownWidth.min}
+          description="Current branch dropdown button"
         >
-          {this.renderPullRequestInfo()}
-        </ToolbarDropdown>
-        {this.props.showCIStatusPopover && this.renderPopover()}
+          <ToolbarDropdown
+            className="branch-button"
+            icon={icon}
+            iconClassName={iconClassName}
+            title={title}
+            description={description}
+            foldoutStyleOverrides={foldoutStyleOverrides}
+            onContextMenu={this.onBranchToolbarButtonContextMenu}
+            tooltip={isOpen ? undefined : tooltip}
+            onDropdownStateChanged={this.onDropDownStateChanged}
+            dropdownContentRenderer={this.renderBranchFoldout}
+            dropdownState={currentState}
+            disabled={disabled}
+            showDisclosureArrow={canOpen}
+            progressValue={progressValue}
+            buttonClassName={buttonClassName}
+            onMouseEnter={this.onMouseEnter}
+            onlyShowTooltipWhenOverflowed={true}
+            isOverflowed={isDescriptionOverflowed}
+            enableFocusTrap={enableFocusTrap}
+          >
+            {this.renderPullRequestInfo()}
+          </ToolbarDropdown>
+          {this.props.showCIStatusPopover && this.renderPopover()}
+        </Resizable>
       </>
     )
+  }
+
+  private onResize = (width: number) => {
+    this.props.dispatcher.setBranchDropdownWidth(width)
+  }
+
+  private onReset = () => {
+    this.props.dispatcher.resetBranchDropdownWidth()
   }
 
   /**
@@ -243,6 +309,9 @@ export class BranchDropdown extends React.Component<
       name: tip.branch.name,
       isLocal: tip.branch.type === BranchType.Local,
       onRenameBranch: this.onRenameBranch,
+      onViewPullRequestOnGitHub: this.props.currentPullRequest
+        ? this.onViewPullRequestOnGithub
+        : undefined,
       onDeleteBranch: this.onDeleteBranch,
     })
 
@@ -267,6 +336,16 @@ export class BranchDropdown extends React.Component<
       repository: this.props.repository,
       branch,
     })
+  }
+
+  private onViewPullRequestOnGithub = () => {
+    const pr = this.props.currentPullRequest
+
+    if (pr === null) {
+      return
+    }
+
+    this.props.dispatcher.showPullRequestByPR(pr)
   }
 
   private onDeleteBranch = async (branchName: string) => {
@@ -304,10 +383,6 @@ export class BranchDropdown extends React.Component<
     // event and close the popover.
     this.props.dispatcher.closeFoldout(FoldoutType.Branch)
     this.openPopover()
-  }
-
-  private updateBadgeBottomPosition = (badgeBottom: number) => {
-    this.setState({ badgeBottom })
   }
 
   private openPopover = () => {
@@ -361,10 +436,14 @@ export class BranchDropdown extends React.Component<
         dispatcher={this.props.dispatcher}
         repository={pr.base.gitHubRepository}
         branchName={currentBranchName}
-        badgeBottom={this.state.badgeBottom}
+        anchor={this.badgeRef}
         closePopover={this.closePopover}
       />
     )
+  }
+
+  private onBadgeRef = (ref: HTMLButtonElement | null) => {
+    this.badgeRef = ref
   }
 
   private renderPullRequestInfo() {
@@ -379,8 +458,9 @@ export class BranchDropdown extends React.Component<
         number={pr.pullRequestNumber}
         dispatcher={this.props.dispatcher}
         repository={pr.base.gitHubRepository}
+        onBadgeRef={this.onBadgeRef}
         onBadgeClick={this.onBadgeClick}
-        onBadgeBottomPositionUpdate={this.updateBadgeBottomPosition}
+        showCIStatusPopover={this.props.showCIStatusPopover}
       />
     )
   }

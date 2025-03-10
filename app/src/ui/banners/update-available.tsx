@@ -1,9 +1,13 @@
 import * as React from 'react'
 import { Dispatcher } from '../dispatcher/index'
 import { LinkButton } from '../lib/link-button'
-import { lastShowCaseVersionSeen, updateStore } from '../lib/update-store'
+import {
+  UpdateStatus,
+  lastShowCaseVersionSeen,
+  updateStore,
+} from '../lib/update-store'
 import { Octicon } from '../octicons'
-import * as OcticonSymbol from '../octicons/octicons.generated'
+import * as octicons from '../octicons/octicons.generated'
 import { PopupType } from '../../models/popup'
 import { shell } from '../../lib/app-shell'
 
@@ -11,36 +15,57 @@ import { ReleaseSummary } from '../../models/release-notes'
 import { Banner } from './banner'
 import { ReleaseNotesUri } from '../lib/releases'
 import { RichText } from '../lib/rich-text'
+import { Emoji } from '../../lib/emoji'
 
 interface IUpdateAvailableProps {
   readonly dispatcher: Dispatcher
   readonly newReleases: ReadonlyArray<ReleaseSummary> | null
   readonly isX64ToARM64ImmediateAutoUpdate: boolean
   readonly isUpdateShowcaseVisible: boolean
-  readonly emoji: Map<string, string>
+  readonly emoji: Map<string, Emoji>
   readonly onDismissed: () => void
+  readonly prioritizeUpdate: boolean
+  readonly prioritizeUpdateInfoUrl: string | undefined
 }
 
 /**
  * A component which tells the user an update is available and gives them the
  * option of moving into the future or being a luddite.
  */
-export class UpdateAvailable extends React.Component<
-  IUpdateAvailableProps,
-  {}
-> {
+export class UpdateAvailable extends React.Component<IUpdateAvailableProps> {
   public render() {
     return (
-      <Banner id="update-available" onDismissed={this.props.onDismissed}>
-        {!this.props.isUpdateShowcaseVisible && (
-          <Octicon
-            className="download-icon"
-            symbol={OcticonSymbol.desktopDownload}
-          />
-        )}
-
+      <Banner
+        id="update-available"
+        className={this.props.prioritizeUpdate ? 'priority' : undefined}
+        dismissable={!this.props.prioritizeUpdate}
+        onDismissed={this.onDismissed}
+      >
+        {this.renderIcon()}
         {this.renderMessage()}
       </Banner>
+    )
+  }
+
+  private onDismissed = () => {
+    if (this.props.isUpdateShowcaseVisible) {
+      return this.dismissUpdateShowCaseVisibility()
+    }
+
+    this.props.onDismissed()
+  }
+
+  private renderIcon() {
+    if (this.props.isUpdateShowcaseVisible) {
+      return null
+    }
+
+    if (this.props.prioritizeUpdate) {
+      return <Octicon className="warning-icon" symbol={octicons.alert} />
+    }
+
+    return (
+      <Octicon className="download-icon" symbol={octicons.desktopDownload} />
     )
   }
 
@@ -67,17 +92,39 @@ export class UpdateAvailable extends React.Component<
 
       return (
         <span>
-          <RichText
-            className="banner-emoji"
-            text={':tada:'}
-            emoji={this.props.emoji}
-          />
+          <span aria-hidden="true">
+            <RichText
+              className="banner-emoji"
+              text={':tada:'}
+              emoji={this.props.emoji}
+            />
+          </span>
           Exciting new features have been added{version}. See{' '}
           <LinkButton onClick={this.showReleaseNotes}>what's new</LinkButton> or{' '}
           <LinkButton onClick={this.dismissUpdateShowCaseVisibility}>
             dismiss
           </LinkButton>
           .
+        </span>
+      )
+    }
+
+    if (this.props.prioritizeUpdate) {
+      return (
+        <span onSubmit={this.updateNow}>
+          This version of GitHub Desktop is missing{' '}
+          {this.props.prioritizeUpdateInfoUrl ? (
+            <LinkButton uri={this.props.prioritizeUpdateInfoUrl}>
+              important updates
+            </LinkButton>
+          ) : (
+            'important updates'
+          )}
+          . Please{' '}
+          <LinkButton onClick={this.updateNow}>
+            restart GitHub Desktop
+          </LinkButton>{' '}
+          now to install pending updates.
         </span>
       )
     }
@@ -124,6 +171,15 @@ export class UpdateAvailable extends React.Component<
   }
 
   private updateNow = () => {
+    if (
+      (__RELEASE_CHANNEL__ === 'development' ||
+        __RELEASE_CHANNEL__ === 'test') &&
+      updateStore.state.status !== UpdateStatus.UpdateReady
+    ) {
+      this.props.onDismissed()
+      return // causes a crash.. if no update is available
+    }
+
     updateStore.quitAndInstallUpdate()
   }
 }

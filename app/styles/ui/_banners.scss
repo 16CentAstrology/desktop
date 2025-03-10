@@ -2,6 +2,7 @@
 @import 'banners/conflicts';
 @import 'banners/update-available';
 @import 'banners/open_thank_you_card';
+@import 'banners/os-not-supported';
 
 .banner {
   $banner-height: 30px;
@@ -22,7 +23,6 @@
   .contents {
     display: flex;
     flex-wrap: nowrap;
-    overflow: hidden;
     align-content: center;
     justify-content: left;
     align-items: center;
@@ -31,20 +31,25 @@
     display: flex;
     flex-shrink: 0;
     flex-grow: 0;
-    width: 16px;
-    height: 16px;
+
     margin-right: var(--spacing);
     margin-left: var(--spacing);
-    background: transparent;
-
-    color: var(--text-secondary-color);
-
-    &:hover {
-      color: var(--text-color);
-    }
 
     &:focus {
       outline: 0;
+    }
+
+    button {
+      width: 16px;
+      height: 16px;
+      border: 0;
+      padding: 0;
+      color: var(--text-secondary-color);
+      background: transparent;
+
+      &:hover {
+        color: var(--text-color);
+      }
     }
   }
 
@@ -69,5 +74,12 @@
       opacity: 0;
       transition: height 225ms ease-in-out 175ms, opacity 175ms ease-in;
     }
+  }
+
+  // When zooming, give the banner more space to display.
+  @media (max-width: 960px) {
+    height: auto;
+    padding-top: var(--spacing-half);
+    padding-bottom: var(--spacing-half);
   }
 }

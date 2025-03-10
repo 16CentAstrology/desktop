@@ -11,12 +11,20 @@ import {
   FailingCheckConclusions,
 } from '../../lib/ci-checks/ci-checks'
 import { Octicon, syncClockwise } from '../octicons'
-import { APICheckConclusion, IAPIWorkflowJobStep } from '../../lib/api'
-import { Popover, PopoverCaretPosition } from '../lib/popover'
+import {
+  APICheckConclusion,
+  APICheckStatus,
+  IAPIWorkflowJobStep,
+} from '../../lib/api'
+import {
+  Popover,
+  PopoverAnchorPosition,
+  PopoverDecoration,
+} from '../lib/popover'
 import { CICheckRunList } from './ci-check-run-list'
 import { encodePathAsUrl } from '../../lib/path'
 import { PopupType } from '../../models/popup'
-import * as OcticonSymbol from '../octicons/octicons.generated'
+import * as octicons from '../octicons/octicons.generated'
 import { Donut } from '../donut'
 import {
   supportsRerunningChecks,
@@ -24,11 +32,28 @@ import {
 } from '../../lib/endpoint-capabilities'
 import { getPullRequestCommitRef } from '../../models/pull-request'
 import { CICheckReRunButton } from './ci-check-re-run-button'
+import groupBy from 'lodash/groupBy'
+import { toSentence } from '../../lib/to_sentence'
 
 const BlankSlateImage = encodePathAsUrl(
   __dirname,
   'static/empty-no-pull-requests.svg'
 )
+
+export function getCombinedStatusSummary(
+  statusHolders: ReadonlyArray<{ conclusion: APICheckConclusion | null }>,
+  description?: 'check' | 'step'
+): string {
+  const conclusions = Object.values(groupBy(statusHolders, 'conclusion')).map(
+    g =>
+      `${g.length} ${getCheckRunConclusionAdjective(
+        g[0].conclusion
+      ).toLocaleLowerCase()}`
+  )
+
+  const pluralize = statusHolders.length > 1 ? `${description}s` : description
+  return `${toSentence(conclusions)} ${pluralize}`
+}
 
 interface ICICheckRunPopoverProps {
   readonly dispatcher: Dispatcher
@@ -42,9 +67,7 @@ interface ICICheckRunPopoverProps {
   /** The pull request's number. */
   readonly prNumber: number
 
-  /** The bottom of the pull request badge so we can position popover relative
-   * to it. */
-  readonly badgeBottom: number
+  readonly anchor: HTMLElement | null
 
   /** Callback for when popover closes */
   readonly closePopover: (event?: MouseEvent) => void
@@ -53,7 +76,6 @@ interface ICICheckRunPopoverProps {
 interface ICICheckRunPopoverState {
   readonly checkRuns: ReadonlyArray<IRefCheck>
   readonly checkRunSummary: string
-  readonly loadingActionLogs: boolean
   readonly loadingActionWorkflows: boolean
 }
 
@@ -75,7 +97,6 @@ export class CICheckRunPopover extends React.PureComponent<
     this.state = {
       checkRuns: cachedStatus?.checks ?? [],
       checkRunSummary: this.getCombinedCheckSummary(cachedStatus),
-      loadingActionLogs: true,
       loadingActionWorkflows: true,
     }
   }
@@ -125,7 +146,6 @@ export class CICheckRunPopover extends React.PureComponent<
       checkRuns: [...check.checks],
       checkRunSummary: this.getCombinedCheckSummary(check),
       loadingActionWorkflows: false,
-      loadingActionLogs: false,
     })
   }
 
@@ -145,7 +165,7 @@ export class CICheckRunPopover extends React.PureComponent<
       `${this.props.repository.htmlURL}/pull/${this.props.prNumber}`
 
     this.props.dispatcher.openInBrowser(url)
-    this.props.dispatcher.recordCheckViewedOnline()
+    this.props.dispatcher.incrementMetric('viewsCheckOnline')
   }
 
   private onViewJobStep = (
@@ -158,7 +178,7 @@ export class CICheckRunPopover extends React.PureComponent<
 
     if (url !== null) {
       dispatcher.openInBrowser(url)
-      this.props.dispatcher.recordCheckJobStepViewedOnline()
+      this.props.dispatcher.incrementMetric('viewsCheckJobStepOnline')
     }
   }
 
@@ -168,30 +188,7 @@ export class CICheckRunPopover extends React.PureComponent<
     if (combinedCheck === null || combinedCheck.checks.length === 0) {
       return ''
     }
-
-    const { checks } = combinedCheck
-    const conclusionMap = new Map<string, number>()
-    for (const check of checks) {
-      const adj = getCheckRunConclusionAdjective(
-        check.conclusion
-      ).toLocaleLowerCase()
-      conclusionMap.set(adj, (conclusionMap.get(adj) ?? 0) + 1)
-    }
-
-    const summaryArray = []
-    for (const [conclusion, count] of conclusionMap.entries()) {
-      summaryArray.push({ count, conclusion })
-    }
-
-    if (summaryArray.length > 1) {
-      const output = summaryArray.map(
-        ({ count, conclusion }) => `${count} ${conclusion}`
-      )
-      return `${output.slice(0, -1).join(', ')}, and ${output.slice(-1)} checks`
-    }
-
-    const pluralize = summaryArray[0].count > 1 ? 'checks' : 'check'
-    return `${summaryArray[0].count} ${summaryArray[0].conclusion} ${pluralize}`
+    return getCombinedStatusSummary(combinedCheck.checks, 'check')
   }
 
   private rerunChecks = (
@@ -205,20 +202,6 @@ export class CICheckRunPopover extends React.PureComponent<
       prRef: getPullRequestCommitRef(this.props.prNumber),
       failedOnly,
     })
-  }
-
-  private getPopoverPositioningStyles = (): React.CSSProperties => {
-    const top = this.props.badgeBottom + 10
-    return { top }
-  }
-
-  private getListHeightStyles = (): React.CSSProperties => {
-    const headerHeight = 55
-    return {
-      maxHeight: `${
-        window.innerHeight - (this.props.badgeBottom + headerHeight + 20)
-      }px`,
-    }
   }
 
   private renderRerunButton = () => {
@@ -264,20 +247,28 @@ export class CICheckRunPopover extends React.PureComponent<
         return (
           <Octicon
             className={'completeness-indicator-success'}
-            symbol={OcticonSymbol.checkCircleFill}
+            symbol={octicons.checkCircleFill}
           />
         )
       case allFailure: {
         return (
           <Octicon
             className={'completeness-indicator-error'}
-            symbol={OcticonSymbol.xCircleFill}
+            symbol={octicons.xCircleFill}
           />
         )
       }
     }
 
-    return <Donut valueMap={getCheckStatusCountMap(checkRuns)} />
+    const valueMap = getCheckStatusCountMap(checkRuns)
+
+    const ariaLabel = `Completeness indicator. ${
+      valueMap.get(APICheckStatus.Completed) ?? 0
+    } completed, ${valueMap.get(APICheckStatus.InProgress) ?? 0} in progress, ${
+      valueMap.get(APICheckStatus.Queued) ?? 0
+    } queued.`
+
+    return <Donut ariaLabel={ariaLabel} valueMap={valueMap} />
   }
 
   private getTitle(
@@ -340,8 +331,7 @@ export class CICheckRunPopover extends React.PureComponent<
       )
 
     return (
-      // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
-      <div className="ci-check-run-list-header" tabIndex={0}>
+      <div className="ci-check-run-list-header">
         <div className="completeness-indicator">
           {this.renderCompletenessIndicator(
             allSuccessIsh,
@@ -351,14 +341,14 @@ export class CICheckRunPopover extends React.PureComponent<
           )}
         </div>
         <div className="ci-check-run-list-title-container">
-          <div className="title">
+          <h1 id="ci-check-run-header" className="title">
             {this.getTitle(
               allSuccessIsh,
               allFailure,
               somePendingNoFailures,
               loading
             )}
-          </div>
+          </h1>
           <div className="check-run-list-summary">{checkRunSummary}</div>
         </div>
         {this.renderRerunButton()}
@@ -371,20 +361,15 @@ export class CICheckRunPopover extends React.PureComponent<
   }
 
   public renderList = (): JSX.Element => {
-    const { checkRuns, loadingActionLogs, loadingActionWorkflows } = this.state
+    const { checkRuns, loadingActionWorkflows } = this.state
     if (loadingActionWorkflows) {
       return this.renderCheckRunLoadings()
     }
 
     return (
-      <div
-        className="ci-check-run-list-container"
-        style={this.getListHeightStyles()}
-      >
+      <div className="ci-check-run-list-container">
         <CICheckRunList
           checkRuns={checkRuns}
-          loadingActionLogs={loadingActionLogs}
-          loadingActionWorkflows={loadingActionWorkflows}
           onViewCheckDetails={this.onViewCheckDetails}
           onViewJobStep={this.onViewJobStep}
           onRerunJob={
@@ -403,12 +388,16 @@ export class CICheckRunPopover extends React.PureComponent<
     return (
       <div className="ci-check-list-popover">
         <Popover
-          caretPosition={PopoverCaretPosition.Top}
+          anchor={this.props.anchor}
+          anchorPosition={PopoverAnchorPosition.Bottom}
+          decoration={PopoverDecoration.Balloon}
+          ariaLabelledby="ci-check-run-header"
           onClickOutside={this.props.closePopover}
-          style={this.getPopoverPositioningStyles()}
         >
-          {this.renderHeader()}
-          {this.renderList()}
+          <div className="ci-check-run-list-wrapper">
+            {this.renderHeader()}
+            {this.renderList()}
+          </div>
         </Popover>
       </div>
     )

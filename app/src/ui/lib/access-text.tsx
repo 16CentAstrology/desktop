@@ -78,6 +78,11 @@ export class AccessText extends React.Component<IAccessTextProps, {}> {
 
     const plainText = `${preText}${accessKeyText}${postText}`
 
-    return <span aria-label={plainText}>{elements}</span>
+    return (
+      <span>
+        <span className="sr-only">{plainText}</span>
+        {elements}
+      </span>
+    )
   }
 }

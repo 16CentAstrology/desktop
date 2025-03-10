@@ -1,19 +1,20 @@
+import { Account } from '../../models/account'
+import { GitHubRepository } from '../../models/github-repository'
 import {
-  APICheckStatus,
+  API,
   APICheckConclusion,
-  IAPIWorkflowJobStep,
+  APICheckStatus,
   IAPIRefCheckRun,
   IAPIRefStatusItem,
-  IAPIWorkflowJob,
-  API,
+  IAPIWorkflowJobStep,
   IAPIWorkflowJobs,
   IAPIWorkflowRun,
 } from '../api'
-import JSZip from 'jszip'
-import { GitHubRepository } from '../../models/github-repository'
-import { Account } from '../../models/account'
 import { supportsRetrieveActionWorkflowByCheckSuiteId } from '../endpoint-capabilities'
-import { formatPreciseDuration } from '../format-duration'
+import {
+  formatLongPreciseDuration,
+  formatPreciseDuration,
+} from '../format-duration'
 
 /**
  * A Desktop-specific model closely related to a GitHub API Check Run.
@@ -47,41 +48,6 @@ export interface ICombinedRefCheck {
   readonly status: APICheckStatus
   readonly conclusion: APICheckConclusion | null
   readonly checks: ReadonlyArray<IRefCheck>
-}
-
-/**
- * Given a zipped list of logs from a workflow job, parses the different job
- * steps.
- */
-export async function parseJobStepLogs(
-  logZip: JSZip,
-  job: IAPIWorkflowJob
-): Promise<ReadonlyArray<IAPIWorkflowJobStep>> {
-  try {
-    const jobFolder = logZip.folder(job.name)
-    if (jobFolder === null) {
-      return job.steps
-    }
-
-    const stepsWLogs = new Array<IAPIWorkflowJobStep>()
-    for (const step of job.steps) {
-      const stepName = step.name.replace('/', '')
-      const stepFileName = `${step.number}_${stepName}.txt`
-      const stepLogFile = jobFolder.file(stepFileName)
-      if (stepLogFile === null) {
-        stepsWLogs.push(step)
-        continue
-      }
-
-      const log = await stepLogFile.async('text')
-      stepsWLogs.push({ ...step, log })
-    }
-    return stepsWLogs
-  } catch (e) {
-    log.warn('Could not parse logs for: ' + job.name)
-  }
-
-  return job.steps
 }
 
 /**
@@ -320,7 +286,7 @@ export function isSuccess(check: IRefCheck) {
  * We use the check suite id as a proxy for determining what's
  * the "latest" of two check runs with the same name.
  */
-export function getLatestCheckRunsByName(
+export function getLatestCheckRunsById(
   checkRuns: ReadonlyArray<IAPIRefCheckRun>
 ): ReadonlyArray<IAPIRefCheckRun> {
   const latestCheckRunsByName = new Map<string, IAPIRefCheckRun>()
@@ -335,7 +301,7 @@ export function getLatestCheckRunsByName(
     // feels hacky... but we don't have any other meta data on a check run that
     // differieates these.
     const nameAndHasPRs =
-      checkRun.name +
+      checkRun.id +
       (checkRun.pull_requests.length > 0
         ? 'isPullRequestCheckRun'
         : 'isPushCheckRun')
@@ -360,7 +326,6 @@ export async function getLatestPRWorkflowRunsLogsForCheckRun(
   repo: string,
   checkRuns: ReadonlyArray<IRefCheck>
 ): Promise<ReadonlyArray<IRefCheck>> {
-  const logCache = new Map<string, JSZip>()
   const jobsCache = new Map<number, IAPIWorkflowJobs | null>()
   const mappedCheckRuns = new Array<IRefCheck>()
   for (const cr of checkRuns) {
@@ -368,12 +333,12 @@ export async function getLatestPRWorkflowRunsLogsForCheckRun(
       mappedCheckRuns.push(cr)
       continue
     }
-    const { id: wfId, logs_url } = cr.actionsWorkflow
+    const { id } = cr.actionsWorkflow
     // Multiple check runs match a single workflow run.
     // We can prevent several job network calls by caching them.
     const workFlowRunJobs =
-      jobsCache.get(wfId) ?? (await api.fetchWorkflowRunJobs(owner, repo, wfId))
-    jobsCache.set(wfId, workFlowRunJobs)
+      jobsCache.get(id) ?? (await api.fetchWorkflowRunJobs(owner, repo, id))
+    jobsCache.set(id, workFlowRunJobs)
 
     const matchingJob = workFlowRunJobs?.jobs.find(j => j.id === cr.id)
     if (matchingJob === undefined) {
@@ -381,21 +346,10 @@ export async function getLatestPRWorkflowRunsLogsForCheckRun(
       continue
     }
 
-    // One workflow can have the logs for multiple check runs.. no need to
-    // keep retrieving it. So we are hashing it.
-    const logZip =
-      logCache.get(logs_url) ?? (await api.fetchWorkflowRunJobLogs(logs_url))
-    if (logZip === null) {
-      mappedCheckRuns.push(cr)
-      continue
-    }
-
-    logCache.set(logs_url, logZip)
-
     mappedCheckRuns.push({
       ...cr,
       htmlUrl: matchingJob.html_url,
-      actionJobSteps: await parseJobStepLogs(logZip, matchingJob),
+      actionJobSteps: matchingJob.steps,
     })
   }
 
@@ -584,13 +538,24 @@ function mapActionWorkflowsRunsToCheckRuns(
 
 /**
  *  Gets the duration of a check run or job step formatted in minutes and
- *  seconds.
+ *  seconds with short notation (e.g. 1m 30s)
  */
 export function getFormattedCheckRunDuration(
   checkRun: IAPIRefCheckRun | IAPIWorkflowJobStep
 ) {
   const duration = getCheckDurationInMilliseconds(checkRun)
   return isNaN(duration) ? '' : formatPreciseDuration(duration)
+}
+
+/**
+ *  Gets the duration of a check run or job step formatted in minutes and
+ *  seconds with long notation (e.g. 1 minute 30 seconds)
+ */
+export function getFormattedCheckRunLongDuration(
+  checkRun: IAPIRefCheckRun | IAPIWorkflowJobStep
+) {
+  const duration = getCheckDurationInMilliseconds(checkRun)
+  return isNaN(duration) ? '' : formatLongPreciseDuration(duration)
 }
 
 /**

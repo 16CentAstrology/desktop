@@ -8,7 +8,7 @@ import {
   getBranchCheckouts,
 } from '../../../src/lib/git'
 import { setupFixtureRepository } from '../../helpers/repositories'
-import { GitProcess } from 'dugite'
+import { exec } from 'dugite'
 import { offsetFromNow } from '../../../src/lib/offset-from'
 
 async function createAndCheckout(
@@ -20,7 +20,7 @@ async function createAndCheckout(
   if (branch === undefined) {
     throw new Error(`Unable to create branch: ${name}`)
   }
-  await checkoutBranch(repository, null, branch)
+  await checkoutBranch(repository, branch, null)
 }
 
 describe('git/reflog', () => {
@@ -96,7 +96,7 @@ describe('git/reflog', () => {
     })
 
     it('returns empty when current branch is orphaned', async () => {
-      const result = await GitProcess.exec(
+      const result = await exec(
         ['checkout', '--orphan', 'orphan-branch'],
         repository.path
       )

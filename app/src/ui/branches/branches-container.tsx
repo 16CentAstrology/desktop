@@ -17,19 +17,27 @@ import { TabBar } from '../tab-bar'
 
 import { Row } from '../lib/row'
 import { Octicon } from '../octicons'
-import * as OcticonSymbol from '../octicons/octicons.generated'
+import * as octicons from '../octicons/octicons.generated'
 import { Button } from '../lib/button'
 
 import { BranchList } from './branch-list'
 import { PullRequestList } from './pull-request-list'
 import { IBranchListItem } from './group-branches'
-import { renderDefaultBranch } from './branch-renderer'
+import {
+  getDefaultAriaLabelForBranch,
+  renderDefaultBranch,
+} from './branch-renderer'
 import { IMatches } from '../../lib/fuzzy-find'
 import { startTimer } from '../lib/timing'
 import { dragAndDropManager } from '../../lib/drag-and-drop-manager'
 import { DragType, DropTargetType } from '../../models/drag-drop'
-import { enablePullRequestQuickView } from '../../lib/feature-flag'
+import {
+  enablePullRequestQuickView,
+  enableResizingToolbarButtons,
+} from '../../lib/feature-flag'
 import { PullRequestQuickView } from '../pull-request-quick-view'
+import { Emoji } from '../../lib/emoji'
+import classNames from 'classnames'
 
 interface IBranchesContainerProps {
   readonly dispatcher: Dispatcher
@@ -50,7 +58,9 @@ interface IBranchesContainerProps {
   readonly isLoadingPullRequests: boolean
 
   /** Map from the emoji shortcut (e.g., :+1:) to the image's local path. */
-  readonly emoji: Map<string, string>
+  readonly emoji: Map<string, Emoji>
+
+  readonly underlineLinks: boolean
 }
 
 interface IBranchesContainerState {
@@ -107,8 +117,11 @@ export class BranchesContainer extends React.Component<
   }
 
   public render() {
+    const classes = classNames('branches-container', {
+      resizable: enableResizingToolbarButtons(),
+    })
     return (
-      <div className="branches-container">
+      <div className={classes}>
         {this.renderTabBar()}
         {this.renderSelectedTab()}
         {this.renderMergeButtonRow()}
@@ -135,6 +148,7 @@ export class BranchesContainer extends React.Component<
         pullRequestItemTop={prListItemTop}
         onMouseEnter={this.onMouseEnterPullRequestQuickView}
         onMouseLeave={this.onMouseLeavePullRequestQuickView}
+        underlineLinks={this.props.underlineLinks}
       />
     )
   }
@@ -161,11 +175,13 @@ export class BranchesContainer extends React.Component<
 
     return (
       <Row className="merge-button-row">
-        <Button className="merge-button" onClick={this.onMergeClick}>
-          <Octicon className="icon" symbol={OcticonSymbol.gitMerge} />
-          <span title={`Merge a branch into ${currentBranch.name}`}>
-            Choose a branch to merge into <strong>{currentBranch.name}</strong>
-          </span>
+        <Button
+          className="merge-button"
+          onClick={this.onMergeClick}
+          tooltip={`Choose a branch to merge into ${currentBranch.name}`}
+        >
+          <Octicon className="icon" symbol={octicons.gitMerge} />
+          Choose a branch to merge into <strong>{currentBranch.name}</strong>
         </Button>
       </Row>
     )
@@ -192,8 +208,8 @@ export class BranchesContainer extends React.Component<
         selectedIndex={this.props.selectedTab}
         allowDragOverSwitching={true}
       >
-        <span>Branches</span>
-        <span className="pull-request-tab">
+        <span id="branches-tab">Branches</span>
+        <span id="pull-requests-tab" className="pull-request-tab">
           {__DARWIN__ ? 'Pull Requests' : 'Pull requests'}
           {this.renderOpenPullRequestsBubble()}
         </span>
@@ -201,20 +217,50 @@ export class BranchesContainer extends React.Component<
     )
   }
 
-  private renderBranch = (item: IBranchListItem, matches: IMatches) => {
+  private renderBranch = (
+    item: IBranchListItem,
+    matches: IMatches,
+    authorDate: Date | undefined
+  ) => {
     return renderDefaultBranch(
       item,
       matches,
       this.props.currentBranch,
-      this.props.onRenameBranch,
-      this.props.onDeleteBranch,
+      authorDate,
       this.onDropOntoBranch,
       this.onDropOntoCurrentBranch
     )
   }
 
+  private getBranchAriaLabel = (
+    item: IBranchListItem,
+    authorDate: Date | undefined
+  ): string => {
+    return getDefaultAriaLabelForBranch(item, authorDate)
+  }
+
   private renderSelectedTab() {
+    const { selectedTab, repository } = this.props
+
+    const ariaLabelledBy =
+      selectedTab === BranchesTab.Branches || !repository.gitHubRepository
+        ? 'branches-tab'
+        : 'pull-requests-tab'
+
+    return (
+      <div
+        role="tabpanel"
+        aria-labelledby={ariaLabelledBy}
+        className="branches-container-panel"
+      >
+        {this.renderSelectedTabContent()}
+      </div>
+    )
+  }
+
+  private renderSelectedTabContent() {
     let tab = this.props.selectedTab
+
     if (!this.props.repository.gitHubRepository) {
       tab = BranchesTab.Branches
     }
@@ -223,6 +269,7 @@ export class BranchesContainer extends React.Component<
       case BranchesTab.Branches:
         return (
           <BranchList
+            repository={this.props.repository}
             defaultBranch={this.props.defaultBranch}
             currentBranch={this.props.currentBranch}
             allBranches={this.props.allBranches}
@@ -235,13 +282,15 @@ export class BranchesContainer extends React.Component<
             canCreateNewBranch={true}
             onCreateNewBranch={this.onCreateBranchWithName}
             renderBranch={this.renderBranch}
+            getBranchAriaLabel={this.getBranchAriaLabel}
             hideFilterRow={dragAndDropManager.isDragOfTypeInProgress(
               DragType.Commit
             )}
             renderPreList={this.renderPreList}
+            onRenameBranch={this.props.onRenameBranch}
+            onDeleteBranch={this.props.onDeleteBranch}
           />
         )
-
       case BranchesTab.PullRequests: {
         return this.renderPullRequests()
       }
@@ -258,6 +307,10 @@ export class BranchesContainer extends React.Component<
     const label = __DARWIN__ ? 'New Branch' : 'New branch'
 
     return (
+      /**
+       * This a11y linter is a false-positive as the element is a drop target
+       * facilitating our drag and drop functionality for cherry-picking.
+       */
       // eslint-disable-next-line jsx-a11y/no-static-element-interactions
       <div
         className="branches-list-item new-branch-drop"
@@ -265,7 +318,7 @@ export class BranchesContainer extends React.Component<
         onMouseLeave={this.onMouseLeaveNewBranchDrop}
         onMouseUp={this.onMouseUpNewBranchDrop}
       >
-        <Octicon className="icon" symbol={OcticonSymbol.plus} />
+        <Octicon className="icon" symbol={octicons.plus} />
         <div className="name">{label}</div>
       </div>
     )
@@ -324,7 +377,6 @@ export class BranchesContainer extends React.Component<
         isOnDefaultBranch={!!isOnDefaultBranch}
         onSelectionChanged={this.onPullRequestSelectionChanged}
         onCreateBranch={this.onCreateBranch}
-        onDismiss={this.onDismiss}
         dispatcher={this.props.dispatcher}
         repository={repository}
         isLoadingPullRequests={this.props.isLoadingPullRequests}
@@ -356,10 +408,6 @@ export class BranchesContainer extends React.Component<
 
   private onTabClicked = (tab: BranchesTab) => {
     this.props.dispatcher.changeBranchesTab(tab)
-  }
-
-  private onDismiss = () => {
-    this.props.dispatcher.closeFoldout(FoldoutType.Branch)
   }
 
   private onMergeClick = () => {
@@ -434,7 +482,7 @@ export class BranchesContainer extends React.Component<
 
   private onDropOntoCurrentBranch = () => {
     if (dragAndDropManager.isDragOfType(DragType.Commit)) {
-      this.props.dispatcher.recordDragStartedAndCanceled()
+      this.props.dispatcher.incrementMetric('dragStartedAndCanceledCount')
     }
   }
 

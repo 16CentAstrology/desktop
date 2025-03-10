@@ -12,17 +12,28 @@
   }
 
   .popover-dropdown-popover {
-    position: absolute;
     min-height: 200px;
     width: 365px;
-    padding: 0;
-    margin-top: 25px;
+
+    .popover-content {
+      padding: 0;
+    }
+
+    .popover-dropdown-wrapper {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
 
     .popover-dropdown-header {
       padding: var(--spacing);
-      font-weight: var(--font-weight-semibold);
       display: flex;
       border-bottom: var(--base-border);
+
+      h3 {
+        margin-bottom: 0;
+        font-size: var(--font-size);
+      }
 
       .close {
         margin-right: 0;
@@ -31,6 +42,8 @@
 
     .popover-dropdown-content {
       display: flex;
+      flex-grow: 1;
+      min-height: 0;
     }
   }
 }

@@ -2,9 +2,9 @@ import * as React from 'react'
 
 import { sanitizedRefName } from '../../lib/sanitize-ref-name'
 import { TextBox } from './text-box'
-import { Octicon } from '../octicons'
-import * as OcticonSymbol from '../octicons/octicons.generated'
 import { Ref } from './ref'
+import { InputWarning } from './input-description/input-warning'
+import { InputError } from './input-description/input-error'
 
 interface IRefNameProps {
   /**
@@ -20,6 +20,16 @@ interface IRefNameProps {
   readonly label?: string | JSX.Element
 
   /**
+   * The aria-labelledBy attribute for the text box.
+   */
+  readonly ariaLabelledBy?: string
+
+  /**
+   * The aria-describedby attribute for the text box.
+   */
+  readonly ariaDescribedBy?: string
+
+  /**
    * Called when the user changes the ref name.
    *
    * A sanitized value for the ref name is passed.
@@ -27,16 +37,12 @@ interface IRefNameProps {
   readonly onValueChange?: (sanitizedValue: string) => void
 
   /**
-   * Called when the user-entered ref name is not valid.
+   * Optional verb for the warning message.
    *
-   * This gives the opportunity to the caller to specify
-   * a custom warning message explaining that the sanitized
-   * value will be used instead.
+   * Warning message: Will be {this.props.warningMessageVerb ?? 'saved '} as{'
+   * '} <Ref>{sanitizedValue}</Ref>.
    */
-  readonly renderWarningMessage?: (
-    sanitizedValue: string,
-    proposedValue: string
-  ) => JSX.Element | string
+  readonly warningMessageVerb?: string
 
   /**
    * Callback used when the component loses focus.
@@ -84,11 +90,17 @@ export class RefNameTextBox extends React.Component<
           label={this.props.label}
           value={this.state.proposedValue}
           ref={this.textBoxRef}
+          ariaLabelledBy={this.props.ariaLabelledBy}
+          ariaDescribedBy={
+            this.props.ariaDescribedBy +
+            ` branch-name-warning` +
+            ` branch-name-error`
+          }
           onValueChanged={this.onValueChange}
           onBlur={this.onBlur}
         />
 
-        {this.renderRefValueWarning()}
+        {this.renderRefValueWarningError()}
       </div>
     )
   }
@@ -130,43 +142,55 @@ export class RefNameTextBox extends React.Component<
     }
   }
 
-  private renderRefValueWarning() {
+  private renderRefValueWarningError() {
     const { proposedValue, sanitizedValue } = this.state
 
     if (proposedValue === sanitizedValue) {
       return null
     }
 
-    const renderWarningMessage =
-      this.props.renderWarningMessage ?? this.defaultRenderWarningMessage
-
-    return (
-      <div className="warning-helper-text">
-        <Octicon symbol={OcticonSymbol.alert} />
-
-        <p>{renderWarningMessage(sanitizedValue, proposedValue)}</p>
-      </div>
-    )
-  }
-
-  private defaultRenderWarningMessage(
-    sanitizedValue: string,
-    proposedValue: string
-  ) {
     // If the proposed value ends up being sanitized as
     // an empty string we show a message saying that the
     // proposed value is invalid.
     if (sanitizedValue.length === 0) {
       return (
-        <>
+        <InputError
+          id="branch-name-error"
+          className="warning-helper-text"
+          trackedUserInput={proposedValue}
+          ariaLiveMessage={`Error: ${proposedValue} is not a valid name.`}
+        >
           <Ref>{proposedValue}</Ref> is not a valid name.
-        </>
+        </InputError>
       )
     }
 
     return (
+      <InputWarning
+        id="branch-name-warning"
+        className="warning-helper-text"
+        trackedUserInput={proposedValue}
+        ariaLiveMessage={this.getWarningMessageAsString(sanitizedValue)}
+      >
+        <p>{this.renderWarningMessage(sanitizedValue)}</p>
+      </InputWarning>
+    )
+  }
+
+  private getWarningMessageAsString(sanitizedValue: string): string {
+    return `Warning: Will be ${
+      this.props.warningMessageVerb ?? 'created '
+    } as ${sanitizedValue}. Spaces and invalid characters have been replaced by hyphens.`
+  }
+
+  private renderWarningMessage(sanitizedValue: string) {
+    return (
       <>
-        Will be created as <Ref>{sanitizedValue}</Ref>.
+        Will be {this.props.warningMessageVerb ?? 'created'} as{' '}
+        <Ref>{sanitizedValue}</Ref>.{' '}
+        <span className="sr-only">
+          Spaces and invalid characters have been replaced by hyphens.
+        </span>
       </>
     )
   }

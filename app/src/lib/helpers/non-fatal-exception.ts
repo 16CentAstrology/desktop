@@ -26,7 +26,25 @@ let lastNonFatalException: number | undefined = undefined
 /** Max one non fatal exeception per minute */
 const minIntervalBetweenNonFatalExceptions = 60 * 1000
 
-export function sendNonFatalException(kind: string, error: Error) {
+export type ExceptionKinds =
+  | 'invalidListSelection'
+  | 'TooManyPopups'
+  | 'remoteNameMismatch'
+  | 'tutorialRepoCreation'
+  | 'multiCommitOperation'
+  | 'PullRequestState'
+  | 'trampolineCommandParser'
+  | 'trampolineServer'
+  | 'PopupNoId'
+  | 'FailedToStartPullRequest'
+  | 'unhandledRejection'
+  | 'rebaseConflictsWithBranchAlreadyUpToDate'
+  | 'forkCreation'
+  | 'NoSuggestedActionsProvided'
+  | 'NoSuggestedActionsProvided'
+  | 'resizeObserverLoopCompleted'
+
+export function sendNonFatalException(kind: ExceptionKinds, error: Error) {
   if (getHasOptedOutOfStats()) {
     return
   }

@@ -1,3 +1,5 @@
+import { splitBuffer } from '../split-buffer'
+
 /**
  * Create a new parser suitable for parsing --format output from commands such
  * as `git log`, `git stash`, and other commands that are not derived from
@@ -12,19 +14,20 @@
  *               Example:
  *
  *               `const { args, parse } = createLogParser({ sha: '%H' })`
- *
  */
 export function createLogParser<T extends Record<string, string>>(fields: T) {
   const keys: Array<keyof T> = Object.keys(fields)
   const format = Object.values(fields).join('%x00')
   const formatArgs = ['-z', `--format=${format}`]
 
-  const parse = (value: string) => {
-    const records = value.split('\0')
+  const parse = <V extends string | Buffer>(value: V) => {
+    const records = (
+      Buffer.isBuffer(value) ? splitBuffer(value, '\0') : value.split('\0')
+    ) as V[]
     const entries = []
 
     for (let i = 0; i < records.length - keys.length; i += keys.length) {
-      const entry = {} as { [K in keyof T]: string }
+      const entry = {} as { [K in keyof T]: V }
       keys.forEach((key, ix) => (entry[key] = records[i + ix]))
       entries.push(entry)
     }
@@ -49,7 +52,6 @@ export function createLogParser<T extends Record<string, string>>(fields: T) {
  *               Example:
  *
  *               `const { args, parse } = createForEachRefParser({ sha: '%(objectname)' })`
- *
  */
 export function createForEachRefParser<T extends Record<string, string>>(
   fields: T

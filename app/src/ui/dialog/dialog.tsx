@@ -3,6 +3,40 @@ import classNames from 'classnames'
 import { DialogHeader } from './header'
 import { createUniqueId, releaseUniqueId } from '../lib/id-pool'
 import { getTitleBarHeight } from '../window/title-bar'
+import { isTopMostDialog } from './is-top-most'
+import { isMacOSSonomaOrLater, isMacOSVentura } from '../../lib/get-os'
+import { sendDialogDidOpen } from '../main-process-proxy'
+
+/**
+ * Class name used for elements that should be focused initially when a dialog
+ * is shown.
+ */
+export const DialogPreferredFocusClassName = 'dialog-preferred-focus'
+
+export interface IDialogStackContext {
+  /** Whether or not this dialog is the top most one in the stack to be
+   * interacted with by the user. This will also determine if event listeners
+   * will be active or not. */
+  isTopMost: boolean
+}
+
+/**
+ * The DialogStackContext is used to communicate between the `Dialog` and the
+ * `App` information that is mostly unique to the `Dialog` component such as
+ * whether it is at the top of the popup stack. Some, but not the vast majority,
+ * custom popup components in between may also utilize this to enable and
+ * disable event listeners in response to changes in whether it is the top most
+ * popup.
+ *
+ * NB *** React.Context is not the preferred method of passing data to child
+ * components for this code base. We are choosing to use it here as implementing
+ * prop drilling would be extremely tedious and would lead to adding  `Dialog`
+ * props on 60+ components that would not otherwise use them. ***
+ *
+ */
+export const DialogStackContext = React.createContext<IDialogStackContext>({
+  isTopMost: false,
+})
 
 /**
  * The time (in milliseconds) from when the dialog is mounted
@@ -35,19 +69,39 @@ interface IDialogProps {
   readonly title?: string | JSX.Element
 
   /**
-   * Whether or not the dialog should be dismissable. A dismissable dialog
-   * can be dismissed either by clicking on the backdrop or by clicking
-   * the close button in the header (if a header was specified). Dismissal
-   * will trigger the onDismissed event which callers must handle and pass
-   * on to the dispatcher in order to close the dialog.
-   *
-   * A non-dismissable dialog can only be closed by means of the component
-   * implementing a dialog. An example would be a critical error or warning
-   * that requires explicit user action by for example clicking on a button.
+   * Typically, a titleId is automatically generated based on the title
+   * attribute if it is a string. If it is not provided, we must assume the
+   * responsibility of providing a titleID that is used as the id of the h1 in
+   * the custom header and used in the aria attributes in this dialog component.
+   * By providing this titleID, the state.titleID will be set to this value and
+   * used in the aria attributes.
+   * */
+  readonly titleId?: string
+
+  /**
+   * An optional element to render to the right of the dialog title.
+   * This can be used to render additional controls that don't belong to the
+   * heading element itself, but are still part of the header (visually).
+   */
+  readonly renderHeaderAccessory?: () => JSX.Element
+
+  /**
+   * Whether or not the dialog should be dismissable by clicking on the
+   * backdrop. Dismissal will trigger the onDismissed event which callers
+   * must handle and pass on to the dispatcher in order to close the dialog.
    *
    * Defaults to true if omitted.
    */
-  readonly dismissable?: boolean
+  readonly backdropDismissable?: boolean
+
+  /**
+   * Whether or not the dialog should be dismissable by any built-in means
+   * (like pressing Escape, clicking on the close button, or clicking on the
+   * backdrop -if enabled-).
+   *
+   * Defaults to false if omitted.
+   */
+  readonly dismissDisabled?: boolean
 
   /**
    * Event triggered when the dialog is dismissed by the user in the
@@ -104,7 +158,65 @@ interface IDialogProps {
    * of the loading operation.
    */
   readonly loading?: boolean
+
+  /** Whether or not to override focus of first element with close button */
+  readonly focusCloseButtonOnOpen?: boolean
+
+  readonly onDialogRef?: (ref: HTMLDialogElement | null) => void
 }
+
+/**
+ * If role is alertdialog, ariaDescribedBy is required.
+ */
+interface IAlertDialogProps extends IDialogProps {
+  /** This is used to point to an element containing content pertinent to the
+   * users workflow. This should be provided for dialogs that are alerts or
+   * confirmations so that that the information that is interrupting the user's
+   * workflow is screen reader announced and acquire a response */
+  readonly ariaDescribedBy: string
+
+  /** By default, a dialog has role of "dialog" and requires the use of an
+   * "aria-label" or "aria-labelledby" to accessibily announce the title or
+   * purpose of the header. This is typically accomplished by providing the
+   * `title` prop and the dialog component will take care of adding the
+   * `aria-labelledby` attribute.
+   *
+   * However, if the dialog is an alert or confirmation dialog we should use the
+   * role of `alertdialog` AND the `ariaDescribedBy` prop should be provided
+   * containing the id of the element with the information required by the user
+   * to proceed or be made aware of to ensure it is also read by screen readers.
+   *
+   *
+   * https://www.w3.org/TR/wai-aria-1.1/#alertdialog
+   * "An alert dialog is a modal dialog that interrupts the user's workflow to
+   * communicate an important message and acquire a response. Examples include
+   * action confirmation prompts and error message confirmations. The
+   * alertdialog role enables assistive technologies and browsers to distinguish
+   * alert dialogs from other dialogs so they have the option of giving alert
+   * dialogs special treatment, such as playing a system alert sound."
+   * */
+  readonly role: 'alertdialog'
+}
+
+/**
+ * If role is undefined or dialog, ariaDescribedBy is optional.
+ */
+interface IDescribedByDialogProps extends IDialogProps {
+  /** This is used to point to an element containing content pertinent to the
+   * users workflow. This should be provided for dialogs that are alerts or
+   * confirmations so that that the information that is interrupting the user's
+   * workflow is screen reader announced and acquire a response */
+  readonly ariaDescribedBy?: string
+
+  /** By default, a dialog has role of "dialog". This is only required for a
+   * role of 'alertdialog' in which case  `ariaDescribedBy` must also be
+   * provided */
+  readonly role?: 'dialog'
+}
+
+/** Interface union to force usage of `ariaDescribedBy` if role of `alertdialog`
+ * is used */
+type DialogProps = IAlertDialogProps | IDescribedByDialogProps
 
 interface IDialogState {
   /**
@@ -137,7 +249,19 @@ interface IDialogState {
  * underlying elements. It's not possible to use the tab key to move focus
  * out of the dialog without first dismissing it.
  */
-export class Dialog extends React.Component<IDialogProps, IDialogState> {
+export class Dialog extends React.Component<DialogProps, IDialogState> {
+  public static contextType = DialogStackContext
+  public declare context: React.ContextType<typeof DialogStackContext>
+
+  private checkIsTopMostDialog = isTopMostDialog(
+    () => {
+      this.onDialogIsTopMost()
+    },
+    () => {
+      this.onDialogIsNotTopMost()
+    }
+  )
+
   private dialogElement: HTMLDialogElement | null = null
   private dismissGraceTimeoutId?: number
 
@@ -152,9 +276,9 @@ export class Dialog extends React.Component<IDialogProps, IDialogState> {
   private readonly resizeObserver: ResizeObserver
   private resizeDebounceId: number | null = null
 
-  public constructor(props: IDialogProps) {
+  public constructor(props: DialogProps) {
     super(props)
-    this.state = { isAppearing: true }
+    this.state = { isAppearing: true, titleId: this.props.titleId }
 
     // Observe size changes and let codemirror know
     // when it needs to refresh.
@@ -223,11 +347,20 @@ export class Dialog extends React.Component<IDialogProps, IDialogState> {
     )
   }
 
+  private isBackdropDismissable() {
+    return this.props.backdropDismissable !== false
+  }
+
   private isDismissable() {
-    return this.props.dismissable === undefined || this.props.dismissable
+    return this.props.dismissDisabled !== true
   }
 
   private updateTitleId() {
+    if (this.props.titleId) {
+      // Using the one provided that is used in a custom header
+      return
+    }
+
     if (this.state.titleId) {
       releaseUniqueId(this.state.titleId)
       this.setState({ titleId: undefined })
@@ -249,11 +382,18 @@ export class Dialog extends React.Component<IDialogProps, IDialogState> {
   }
 
   public componentDidMount() {
-    if (!this.dialogElement) {
+    sendDialogDidOpen()
+    this.checkIsTopMostDialog(this.context.isTopMost)
+  }
+
+  protected onDialogIsTopMost() {
+    if (this.dialogElement == null) {
       return
     }
 
-    this.dialogElement.showModal()
+    if (!this.dialogElement.open) {
+      this.dialogElement.showModal()
+    }
 
     // Provide an event that components can subscribe to in order to perform
     // tasks such as re-layout after the dialog is visible
@@ -273,6 +413,20 @@ export class Dialog extends React.Component<IDialogProps, IDialogState> {
 
     this.resizeObserver.observe(this.dialogElement)
     window.addEventListener('resize', this.scheduleResizeEvent)
+  }
+
+  protected onDialogIsNotTopMost() {
+    if (this.dialogElement !== null && this.dialogElement.open) {
+      this.dialogElement?.close()
+    }
+
+    this.clearDismissGraceTimeout()
+
+    window.removeEventListener('focus', this.onWindowFocus)
+    document.removeEventListener('mouseup', this.onDocumentMouseUp)
+
+    this.resizeObserver.disconnect()
+    window.removeEventListener('resize', this.scheduleResizeEvent)
   }
 
   /**
@@ -302,7 +456,11 @@ export class Dialog extends React.Component<IDialogProps, IDialogState> {
    * In attempting to follow the guidelines outlined above we follow a priority
    * order in determining the first suitable child.
    *
-   *  1. The element with the lowest positive tabIndex
+   *  1. An element marked with the `DialogPreferredFocusClassName` class.
+   *     Sometimes we just need a specific element to get focus first, and it's
+   *     hard to fit it into the rest of these generic focus rules.
+   *
+   *  2. The element with the lowest positive tabIndex
    *     This might sound counterintuitive but imagine the following pseudo
    *     dialog this would be button D as button D would be the first button
    *     to get focused when hitting Tab.
@@ -314,18 +472,20 @@ export class Dialog extends React.Component<IDialogProps, IDialogState> {
    *      <button tabIndex=1>D</button>
    *     </dialog>
    *
-   *  2. The first element which is either implicitly keyboard focusable (like a
+   *  3. The first element which is either implicitly keyboard focusable (like a
    *     text input field) or explicitly focusable through tabIndex=0 (like a TabBar
    *     tab)
    *
-   *  3. The first submit button. We use this as a proxy for what macOS HIG calls
+   *  4. The first submit button. We use this as a proxy for what macOS HIG calls
    *     "default button". It's not the same thing but for our purposes it's close
    *     enough.
    *
-   *  4. Any remaining button
+   *  5. Any remaining button
+   *
+   *  6. The dialog close button
    *
    */
-  private focusFirstSuitableChild() {
+  public focusFirstSuitableChild() {
     const dialog = this.dialogElement
 
     if (dialog === null) {
@@ -338,6 +498,9 @@ export class Dialog extends React.Component<IDialogProps, IDialogState> {
       'button:not(:disabled):not([tabindex="-1"])',
       '[tabindex]:not(:disabled):not([tabindex="-1"])',
     ].join(', ')
+
+    // Element marked as "preferred" to have the focus when dialog is shown
+    let firstPreferred: HTMLElement | null = null
 
     // The element which has the lowest explicit tab index (i.e. greater than 0)
     let firstExplicit: { 0: number; 1: HTMLElement | null } = [Infinity, null]
@@ -353,18 +516,31 @@ export class Dialog extends React.Component<IDialogProps, IDialogState> {
     // anchor tag masquerading as a button)
     let firstTabbable: HTMLElement | null = null
 
+    const closeButton = dialog.querySelector(
+      ':scope > div.dialog-header button.close'
+    )
+
+    if (
+      closeButton instanceof HTMLElement &&
+      this.props.focusCloseButtonOnOpen
+    ) {
+      closeButton.focus()
+      return
+    }
+
     const excludedInputTypes = [
       ':not([type=button])',
       ':not([type=submit])',
       ':not([type=reset])',
       ':not([type=hidden])',
-      ':not([type=checkbox])',
       ':not([type=radio])',
     ]
 
+    const preferredFirstSelector = `.${DialogPreferredFocusClassName}`
     const inputSelector = `input${excludedInputTypes.join('')}, textarea`
     const buttonSelector =
       'input[type=button], input[type=submit] input[type=reset], button'
+
     const submitSelector = 'input[type=submit], button[type=submit]'
 
     for (const candidate of dialog.querySelectorAll(selector)) {
@@ -374,7 +550,12 @@ export class Dialog extends React.Component<IDialogProps, IDialogState> {
 
       const tabIndex = parseInt(candidate.getAttribute('tabindex') || '', 10)
 
-      if (tabIndex > 0 && tabIndex < firstExplicit[0]) {
+      if (
+        firstPreferred === null &&
+        candidate.matches(preferredFirstSelector)
+      ) {
+        firstPreferred = candidate
+      } else if (tabIndex > 0 && tabIndex < firstExplicit[0]) {
         firstExplicit = [tabIndex, candidate]
       } else if (
         firstTabbable === null &&
@@ -386,16 +567,29 @@ export class Dialog extends React.Component<IDialogProps, IDialogState> {
         candidate.matches(submitSelector)
       ) {
         firstSubmitButton = candidate
-      } else if (firstButton === null && candidate.matches(buttonSelector)) {
+      } else if (
+        firstButton === null &&
+        candidate.matches(buttonSelector) &&
+        candidate !== closeButton
+      ) {
         firstButton = candidate
       }
     }
 
-    const newActive =
-      firstExplicit[1] || firstTabbable || firstSubmitButton || firstButton
+    const focusCandidates = [
+      firstPreferred,
+      firstExplicit[1],
+      firstTabbable,
+      firstSubmitButton,
+      firstButton,
+      closeButton,
+    ]
 
-    if (newActive !== null) {
-      newActive.focus()
+    for (const focusCandidate of focusCandidates) {
+      if (focusCandidate instanceof HTMLElement) {
+        focusCandidate.focus()
+        break
+      }
     }
   }
 
@@ -425,23 +619,19 @@ export class Dialog extends React.Component<IDialogProps, IDialogState> {
   }
 
   public componentWillUnmount() {
-    this.clearDismissGraceTimeout()
-
     if (this.state.titleId) {
       releaseUniqueId(this.state.titleId)
     }
 
-    window.removeEventListener('focus', this.onWindowFocus)
-    document.removeEventListener('mouseup', this.onDocumentMouseUp)
-
-    this.resizeObserver.disconnect()
-    window.removeEventListener('resize', this.scheduleResizeEvent)
+    this.checkIsTopMostDialog(false)
   }
 
-  public componentDidUpdate() {
+  public componentDidUpdate(prevProps: DialogProps) {
     if (!this.props.title && this.state.titleId) {
       this.updateTitleId()
     }
+
+    this.checkIsTopMostDialog(this.context.isTopMost)
   }
 
   private onDialogCancel = (e: Event | React.SyntheticEvent) => {
@@ -454,7 +644,7 @@ export class Dialog extends React.Component<IDialogProps, IDialogState> {
       return
     }
 
-    if (this.isDismissable() === false) {
+    if (!this.isDismissable() || !this.isBackdropDismissable()) {
       return
     }
 
@@ -540,12 +730,14 @@ export class Dialog extends React.Component<IDialogProps, IDialogState> {
     }
 
     this.dialogElement = e
+    this.props.onDialogRef?.(e)
   }
 
   private onKeyDown = (event: React.KeyboardEvent) => {
     if (event.defaultPrevented) {
       return
     }
+
     const shortcutKey = __DARWIN__ ? event.metaKey : event.ctrlKey
     if ((shortcutKey && event.key === 'w') || event.key === 'Escape') {
       this.onDialogCancel(event)
@@ -579,11 +771,76 @@ export class Dialog extends React.Component<IDialogProps, IDialogState> {
       <DialogHeader
         title={this.props.title}
         titleId={this.state.titleId}
-        dismissable={this.isDismissable()}
-        onDismissed={this.onDismiss}
+        showCloseButton={this.isDismissable()}
+        onCloseButtonClick={this.onDismiss}
+        renderAccessory={this.props.renderHeaderAccessory}
         loading={this.props.loading}
       />
     )
+  }
+
+  /**
+   * Gets the aria-labelledby and aria-describedby attributes for the dialog
+   * element.
+   *
+   * The correct semantics are that the dialog element should have the
+   * aria-labelledby and the aria-describedby is optional unless the dialog has
+   * a role of alertdialog, in which case both are required.
+   *
+   * However, macOS VoiceOver is not consistent. We have different implementations for it.
+   */
+  private getAriaAttributes() {
+    if (isMacOSVentura()) {
+      /*
+       * macOs Ventura introduced a regression in that:
+       *
+       * For role of 'dialog' (default),  the aria-labelledby is not announced and
+       *    if provided prevents the aria-describedby from being announced. Thus,
+       *    this method will add the aria-labelledby to the aria-describedby in this
+       *    case.
+       *
+       * For role of 'alertdialog', the aria-labelledby is announced but not the
+       *    aria-describedby. Thus, this method will add both to the
+       *    aria-labelledby.
+       *
+       * Neither of the above is semantically correct tho, hopefully, macOs will be
+       * fixed in a future release. The issue is known for macOS versions 13.0 to
+       * the current version of 13.5 as of 2023-07-31.
+       *
+       * A known macOS behavior is that if two ids are provided to the
+       * aria-describedby only the first one is announced with a note about the
+       * second one existing. This currently does not impact us as we only provide
+       * one id for non-alert dialogs and the alert dialogs are handled with the
+       * `aria-labelledby` where both ids are announced
+       */
+      if (this.props.role === 'alertdialog') {
+        return {
+          'aria-labelledby': `${this.state.titleId} ${this.props.ariaDescribedBy}`,
+        }
+      }
+
+      return {
+        'aria-describedby': `${this.state.titleId} ${
+          this.props.ariaDescribedBy ?? ''
+        }`,
+      }
+    }
+
+    if (isMacOSSonomaOrLater() && this.props.role !== 'alertdialog') {
+      // macOS Sonoma introduced a regression in that: For role of 'dialog', the
+      // aria-labelledby is not announced. However, if the dialog has a child
+      // with a role of header (aka h* elemeent) it will be announced as long as
+      // the aria-labelledby is NOT provided.
+      return {
+        'aria-describedby': this.props.ariaDescribedBy,
+      }
+    }
+
+    // correct semantics
+    return {
+      'aria-labelledby': this.state.titleId,
+      'aria-describedby': this.props.ariaDescribedBy,
+    }
   }
 
   public render() {
@@ -597,14 +854,19 @@ export class Dialog extends React.Component<IDialogProps, IDialogState> {
     )
 
     return (
+      /**
+       * This a11y linter is a false-positive as the mousedown and keydown
+       * listeners facilitate expected behaviors around dismissing the dialog.
+       */
       // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
       <dialog
         ref={this.onDialogRef}
         id={this.props.id}
+        role={this.props.role}
         onMouseDown={this.onDialogMouseDown}
         onKeyDown={this.onKeyDown}
         className={className}
-        aria-labelledby={this.state.titleId}
+        {...this.getAriaAttributes()}
         tabIndex={-1}
       >
         {this.renderHeader()}

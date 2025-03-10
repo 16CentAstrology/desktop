@@ -1,6 +1,6 @@
 import * as FSE from 'fs-extra'
 import * as Path from 'path'
-import { GitProcess } from 'dugite'
+import { exec } from 'dugite'
 
 import { shell } from '../helpers/test-app-shell'
 import {
@@ -22,6 +22,7 @@ import {
 import { BranchType } from '../../src/models/branch'
 import { StatsStore, StatsDatabase } from '../../src/lib/stats'
 import { UiActivityMonitor } from '../../src/ui/lib/ui-activity-monitor'
+import { fakePost } from '../fake-stats-post'
 
 describe('GitStore', () => {
   let statsStore: StatsStore
@@ -29,7 +30,8 @@ describe('GitStore', () => {
   beforeEach(() => {
     statsStore = new StatsStore(
       new StatsDatabase('test-StatsDatabase'),
-      new UiActivityMonitor()
+      new UiActivityMonitor(),
+      fakePost
     )
   })
 
@@ -62,8 +64,8 @@ describe('GitStore', () => {
     await FSE.writeFile(licenseFilePath, 'SOME WORDS GO HERE\n')
 
     // commit the readme file but leave the license
-    await GitProcess.exec(['add', readmeFile], repo.path)
-    await GitProcess.exec(['commit', '-m', 'added readme file'], repo.path)
+    await exec(['add', readmeFile], repo.path)
+    await exec(['commit', '-m', 'added readme file'], repo.path)
 
     await FSE.writeFile(readmeFilePath, 'WRITING SOME NEW WORDS\n')
     // setup requires knowing about the current tip
@@ -96,9 +98,9 @@ describe('GitStore', () => {
     await FSE.writeFile(filePath, 'SOME WORDS GO HERE\n')
 
     // commit the file, and then rename it
-    await GitProcess.exec(['add', file], repo.path)
-    await GitProcess.exec(['commit', '-m', 'added file'], repo.path)
-    await GitProcess.exec(['mv', file, renamedFile], repo.path)
+    await exec(['add', file], repo.path)
+    await exec(['commit', '-m', 'added file'], repo.path)
+    await exec(['mv', file, renamedFile], repo.path)
 
     const statusBeforeDiscard = await getStatusOrThrow(repo)
     const filesToDiscard = statusBeforeDiscard.workingDirectory.files
@@ -126,8 +128,8 @@ describe('GitStore', () => {
 
       await FSE.writeFile(filePath, 'SOME WORDS GO HERE\n')
 
-      await GitProcess.exec(['add', file], repository.path)
-      await GitProcess.exec(['commit', '-m', commitMessage], repository.path)
+      await exec(['add', file], repository.path)
+      await exec(['commit', '-m', commitMessage], repository.path)
 
       firstCommit = await getCommit(repository, 'master')
       expect(firstCommit).not.toBeNull()
@@ -191,7 +193,7 @@ describe('GitStore', () => {
       // compare the index state to some other tree-ish
       // 4b825dc642cb6eb9a060e54bf8d69288fbee4904 is the magic empty tree
       // if nothing is staged, this should return no entries
-      const result = await GitProcess.exec(
+      const result = await exec(
         [
           'diff-index',
           '--name-status',
@@ -298,7 +300,7 @@ describe('GitStore', () => {
 
     it('the tracking branch is not cleared when the remote branch is removed', async () => {
       // checkout the other branch after cloning
-      await GitProcess.exec(['checkout', 'some-other-branch'], repository.path)
+      await exec(['checkout', 'some-other-branch'], repository.path)
 
       const gitStore = new GitStore(repository, shell, statsStore)
       await gitStore.loadBranches()
@@ -309,13 +311,10 @@ describe('GitStore', () => {
       expect(currentBranchBefore!.upstream).toBe('origin/some-other-branch')
 
       // delete the ref in the upstream branch
-      await GitProcess.exec(
-        ['branch', '-D', 'some-other-branch'],
-        upstream.path
-      )
+      await exec(['branch', '-D', 'some-other-branch'], upstream.path)
 
       // update the local repository state to remove the remote ref
-      await GitProcess.exec(['fetch', '--prune', '--all'], repository.path)
+      await exec(['fetch', '--prune', '--all'], repository.path)
       await gitStore.loadBranches()
 
       const currentBranchAfter = gitStore.allBranches.find(

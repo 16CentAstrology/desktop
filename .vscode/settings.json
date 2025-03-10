@@ -27,7 +27,7 @@
   "editor.formatOnSave": true,
   "prettier.ignorePath": ".prettierignore",
   "eslint.options": {
-    "configFile": ".eslintrc.yml",
+    "overrideConfigFile": ".eslintrc.yml",
     "rulePaths": ["eslint-rules"]
   },
   "eslint.validate": [
@@ -35,5 +35,6 @@
     "javascriptreact",
     "typescript",
     "typescriptreact"
-  ]
+  ],
+  "editor.defaultFormatter": "esbenp.prettier-vscode"
 }

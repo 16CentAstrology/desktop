@@ -2,8 +2,9 @@ import * as React from 'react'
 
 import { AppFileStatus, AppFileStatusKind } from '../../models/status'
 import { Octicon } from '../octicons'
-import * as OcticonSymbol from '../octicons/octicons.generated'
+import * as octicons from '../octicons/octicons.generated'
 import { PathText } from './path-text'
+import { IMatches } from '../../lib/fuzzy-find'
 
 interface IPathLabelProps {
   /** the current path of the file */
@@ -12,6 +13,12 @@ interface IPathLabelProps {
   readonly status: AppFileStatus
 
   readonly availableWidth?: number
+
+  /** aria hidden value */
+  readonly ariaHidden?: boolean
+
+  /** The characters in the file path to highlight */
+  readonly matches?: IMatches
 }
 
 /** The pixel width reserved to give the resize arrow padding on either side. */
@@ -30,7 +37,7 @@ export class PathLabel extends React.Component<IPathLabelProps, {}> {
       className: 'path-label-component',
     }
 
-    const { status } = this.props
+    const { status, matches } = this.props
 
     const availableWidth = this.props.availableWidth
     if (
@@ -41,19 +48,25 @@ export class PathLabel extends React.Component<IPathLabelProps, {}> {
         ? availableWidth / 2 - ResizeArrowPadding
         : undefined
       return (
-        // eslint-disable-next-line jsx-a11y/label-has-associated-control
-        <label {...props}>
+        <span {...props} aria-hidden={this.props.ariaHidden}>
           <PathText path={status.oldPath} availableWidth={segmentWidth} />
-          <Octicon className="rename-arrow" symbol={OcticonSymbol.arrowRight} />
-          <PathText path={this.props.path} availableWidth={segmentWidth} />
-        </label>
+          <Octicon className="rename-arrow" symbol={octicons.arrowRight} />
+          <PathText
+            path={this.props.path}
+            availableWidth={segmentWidth}
+            matches={matches}
+          />
+        </span>
       )
     } else {
       return (
-        // eslint-disable-next-line jsx-a11y/label-has-associated-control
-        <label {...props}>
-          <PathText path={this.props.path} availableWidth={availableWidth} />
-        </label>
+        <span {...props} aria-hidden={this.props.ariaHidden}>
+          <PathText
+            path={this.props.path}
+            matches={matches}
+            availableWidth={availableWidth}
+          />
+        </span>
       )
     }
   }

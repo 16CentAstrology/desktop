@@ -7,12 +7,13 @@ import { assertNever } from '../../lib/fatal-error'
 import memoizeOne from 'memoize-one'
 import { createObservableRef } from './observable-ref'
 import { Tooltip } from './tooltip'
+import { Emoji } from '../../lib/emoji'
 
 interface IRichTextProps {
   readonly className?: string
 
   /** A lookup of emoji characters to map to image resources */
-  readonly emoji: Map<string, string>
+  readonly emoji: Map<string, Emoji>
 
   /**
    * The raw text to inspect for things to highlight or an array
@@ -35,7 +36,7 @@ interface IRichTextProps {
 }
 
 function getElements(
-  emoji: Map<string, string>,
+  emoji: Map<string, Emoji>,
   repository: Repository | undefined,
   renderUrlsAsLinks: boolean | undefined,
   text: string | ReadonlyArray<TokenResult>
@@ -46,14 +47,18 @@ function getElements(
   return tokens.map((token, index) => {
     switch (token.kind) {
       case TokenType.Emoji:
-        return (
-          <img
-            key={index}
-            alt={token.text}
-            className="emoji"
-            src={token.path}
-          />
-        )
+        if (token.emoji) {
+          return <span key={index}>{token.emoji}</span>
+        } else {
+          return (
+            <img
+              key={index}
+              alt={token.description ?? token.text}
+              className="emoji"
+              src={token.path}
+            />
+          )
+        }
       case TokenType.Link:
         if (renderUrlsAsLinks !== false) {
           const title = token.text !== token.url ? token.url : undefined

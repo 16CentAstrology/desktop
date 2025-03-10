@@ -9,12 +9,14 @@
 
   display: flex;
   background-color: var(--box-alt-background-color);
+
   padding: var(--spacing);
 
   .summary {
     position: relative;
     display: flex;
     flex-direction: row;
+    column-gap: var(--spacing-half);
 
     .summary-field {
       flex: 1;
@@ -25,24 +27,20 @@
       }
     }
 
-    .avatar {
-      flex-shrink: 0;
-      width: var(--text-field-height);
-      height: var(--text-field-height);
-      margin-right: var(--spacing-half);
-    }
-
-    &.with-length-hint input {
+    &.with-trailing-icon input {
       padding-right: 20px;
     }
 
-    .length-hint {
+    .length-hint,
+    .commit-message-failure-hint {
+      $distanceFromEdge: 2px;
+
       position: absolute;
-      top: 0;
+      top: $distanceFromEdge;
       right: 0;
       width: 16px;
-      margin-right: 4px;
-      height: var(--text-field-height);
+      margin-right: $distanceFromEdge;
+      height: calc(var(--text-field-height) - #{2 * $distanceFromEdge});
       display: flex;
       justify-content: center;
       align-items: center;
@@ -51,6 +49,29 @@
         height: 12px;
       }
     }
+
+    .commit-message-failure-hint {
+      border: none;
+      background: none;
+
+      &:hover {
+        background: var(--input-icon-hover-background-color);
+      }
+
+      .warning-icon {
+        color: var(--input-icon-warning-color);
+      }
+
+      .error-icon {
+        color: var(--input-icon-error-color);
+      }
+    }
+  }
+
+  .popover-component {
+    // a width of 300px causes more jarring movement when going from 2
+    // failed rules to 1 and the user can bypass, so use a slightly smaller amount
+    width: 298px;
   }
 
   &.with-co-authors .description-focus-container {
@@ -66,6 +87,10 @@
 
     &:hover {
       color: var(--text-color);
+    }
+
+    &:focus {
+      outline-offset: 2px;
     }
   }
 
@@ -84,13 +109,17 @@
     .description-field textarea {
       min-height: 80px;
 
+      @media (max-height: 500px) {
+        min-height: 10px;
+      }
+
       border-bottom-left-radius: 0;
       border-bottom-right-radius: 0;
     }
   }
 
   .description-focus-container {
-    border: 1px solid var(--box-border-color);
+    border: var(--contrast-border);
     border-radius: var(--border-radius);
     background: var(--background-color);
     // Fake that we're a text-box
@@ -156,6 +185,7 @@
     .co-authors-toggle {
       // button reset styles
       border: none;
+      border-radius: 0px;
       -webkit-appearance: none;
       background: transparent;
       padding: 0;
@@ -168,23 +198,12 @@
       width: 18px;
       cursor: pointer;
 
-      &:after {
-        content: attr(aria-label);
-        position: absolute;
-        margin-left: 3px;
-        margin-top: 1px;
-        font-size: var(--font-size-sm);
-        color: var(--text-secondary-color);
-        opacity: 0;
-        transition: 150ms all ease-in-out;
-        pointer-events: none;
-      }
-
       &:disabled {
         pointer-events: none;
       }
 
-      &:hover {
+      &:hover,
+      &:focus-visible {
         &:after {
           opacity: 1;
         }

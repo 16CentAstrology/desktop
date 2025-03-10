@@ -19,21 +19,33 @@ interface IRadioButtonProps<T> {
   readonly checked: boolean
 
   /**
-   * The label of the radio button.
+   * The label of the radio button. If not provided, the children are used
    */
-  readonly label: string | JSX.Element
+  readonly label?: string | JSX.Element
 
   /**
    * The value of the radio button.
    */
   readonly value: T
+
+  /** Optional: The tab index of the radio button */
+  readonly tabIndex?: number
+
+  /** Whether the textarea field should auto focus when mounted. */
+  readonly autoFocus?: boolean
+
+  /** Optional: The onDoubleClick event handler for radio button */
+  readonly onDoubleClick?: (
+    key: T,
+    event: React.MouseEvent<HTMLLabelElement>
+  ) => void
 }
 
 interface IRadioButtonState {
   readonly inputId: string
 }
 
-export class RadioButton<T extends string> extends React.Component<
+export class RadioButton<T extends React.Key> extends React.Component<
   IRadioButtonProps<T>,
   IRadioButtonState
 > {
@@ -58,13 +70,21 @@ export class RadioButton<T extends string> extends React.Component<
           value={this.props.value}
           checked={this.props.checked}
           onChange={this.onSelected}
+          tabIndex={this.props.tabIndex}
+          autoFocus={this.props.autoFocus}
         />
-        <label htmlFor={this.state.inputId}>{this.props.label}</label>
+        <label htmlFor={this.state.inputId} onDoubleClick={this.onDoubleClick}>
+          {this.props.label ?? this.props.children}
+        </label>
       </div>
     )
   }
 
   private onSelected = (evt: React.FormEvent<HTMLInputElement>) => {
     this.props.onSelected(this.props.value, evt)
+  }
+
+  private onDoubleClick = (evt: React.MouseEvent<HTMLLabelElement>) => {
+    this.props.onDoubleClick?.(this.props.value, evt)
   }
 }

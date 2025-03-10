@@ -1,5 +1,1104 @@
 {
   "releases": {
+    "3.4.18": [
+      "[Fixed] Prevent crash due to non-critical error - #20150",
+      "[Fixed] Reinstate missing space in the About dialog last checked text - #20094. Thanks @alexravenna!"
+    ],
+    "3.4.18-beta2": [
+      "[Fixed] Prevent crash due to non-critical error - #20150"
+    ],
+    "3.4.18-beta1": [
+      "[Fixed] Fix: inconsistent rebase behaviour - #19816. Thanks @sfadschm!",
+      "[Fixed] Pressing Ctrl+A in the Find dialog now selects the search text instead of the diff content - #20049"
+    ],
+    "3.4.17": [
+      "[Fixed] Dialogs announce their titles on macOS Sequoia for VoiceOver users - #20009",
+      "[Fixed] The commit button words are separated by spaces for screen reader users - #20011",
+      "[Fixed] Prevent crash when attempting to launch external editor with insufficient permissions - #19929",
+      "[Fixed] Running the Desktop CLI on Windows no longer waits for Desktop to exit before exiting itself - #19916",
+      "[Improved] Announce update progress in about dialog - #20018",
+      "[Improved] Buttons with dropdown caret that trigger context menus can be opened with down arrow - #20007",
+      "[Improved] Links that do not open external urls now have a role of button for improved screen reader semantics - #20010",
+      "[Improved] Email attribution warning only considers verified emails - #19968",
+      "[Improved] Improve tooltip for unknown co-authors - #19992",
+      "[Improved] The length of shortened SHAs are consistently 7 characters - #19902. Thanks @molnarriso!",
+      "[Improved] Upgrade Electron to v34.0.1 - #19919",
+      "[Removed] Remove support for macOS 10.15 - #19919"
+    ],
+    "3.4.17-beta3": [
+      "[Fixed] Dialogs announce their titles on macOS Sequoia for VoiceOver users - #20009",
+      "[Fixed] The commit button words are separated by spaces for screen reader users - #20011",
+      "[Improved] Announce update progress in about dialog - #20018",
+      "[Improved] Buttons with dropdown caret that trigger context menus can be opened with down arrow - #20007",
+      "[Improved] Links that do not open external urls now have a role of button for improved screen reader semantics - #20010",
+      "[Improved] Email attribution warning only considers verified emails - #19968"
+    ],
+    "3.4.17-beta2": [
+      "[Fixed] Opening autocomplete inputs no longer causes a crash due to resize observer error - #19997",
+      "[Improved] Improve tooltip for unknown co-authors - #19992",
+      "[Improved] The length of shortened SHAs are consistently 9 characters - #19902. Thanks @molnarriso!"
+    ],
+    "3.4.17-beta1": [
+      "[Fixed] Prevent crash when attempting to launch external editor with insufficient permissions - #19929",
+      "[Fixed] Running the Desktop CLI on Windows no longer waits for Desktop to exit before exiting itself - #19916",
+      "[Improved] Upgrade Electron to v34.0.1 - #19919",
+      "[Removed] Remove support for macOS 10.15 - #19919"
+    ],
+    "3.4.16": [
+      "[Improved] Prevent upgrading from macOS 10.15 as soon to be unsupported - #19918"
+    ],
+    "3.4.16-beta2": [
+      "[Improved] Prevent upgrading from macOS 10.15 as soon to be unsupported - #19918"
+    ],
+    "3.4.16-beta1": [
+      "[New] Add support for arm64 version of Git on Windows - #19880. Thanks @dennisameling",
+      "[Fixed] Restore ability to sign in on Windows - #19873",
+      "[Fixed] Moving maximized window in windows - #19786. Thanks @ahrm!",
+      "[Improved] Upgrade embedded Git to v2.47.1 on macOS, and to v2.47.2.windows.2 on Windows"
+    ],
+    "3.4.15": ["[Fixed] Restore ability to sign in on Windows"],
+    "3.4.14": [
+      "[Added] Add Ghostty shell integration - #19777. Thanks @aelew!",
+      "[Fixed] No extra new line is prepended to `.gitignore` when adding to a non-existent `.gitignore` file - #19279. Thanks @GWDx!",
+      "[Fixed] Fix Branch List context menu showing pull request option when none exists - #19711. Thanks @DylanDevelops!",
+      "[Fixed] The Thank You banner is announced by VoiceOver - #19734",
+      "[Fixed] The \"Showcase Update Banner\" and \"OS version No Longer Supported Banner\" announce their messages when using VoiceOver.",
+      "[Fixed] Showcase update banner's \"x\" button will dismiss the banner.",
+      "[Improved] Desktop's CLI no longer communicates with the app via protocol handlers - #19733",
+      "[Improved] Defer expensive path validation until it's required - #19694",
+      "[Removed] Remove the tooltip on the CI status indicator - #19735",
+      "[Removed] Drop support for Atom, invoke editors directly - #19744",
+      "[Removed] The \"Accessibility Settings\" announcement banner is removed."
+    ],
+    "3.4.13": [
+      "[Fixed] Mitigates several vulnerabilities related to Git's credential helper protocol - CVE-2025-23040, CVE-2024-50349, CVE-2024-52006, CVE-2024-50338, CVE-2024-53263"
+    ],
+    "3.4.13-beta2": [
+      "[Added] Add Ghostty shell integration - #19777. Thanks @aelew!",
+      "[Fixed] Mitigates several vulnerabilities related to Git's credential helper protocol - CVE-2024-50349, CVE-2024-52006, CVE-2024-50338, CVE-2024-53263",
+      "[Fixed] No extra new line is prepended to `.gitignore` when adding to a non-existent `.gitignore` file - #19279. Thanks @GWDx!"
+    ],
+    "3.4.13-beta1": [
+      "[Fixed] Fix Branch List context menu showing pull request option when none exists - #19711. Thanks @DylanDevelops!",
+      "[Fixed] The Thank You banner is announced by VoiceOver - #19734",
+      "[Improved] Have CLI invoke the app directly - #19733",
+      "[Improved] Don't execute rev-parse unless we have to - #19694",
+      "[Removed] Remove the tooltip on the CI status indicator - #19735",
+      "[Removed] Drop support for Atom, invoke editors directly - #19744"
+    ],
+    "3.4.12": [
+      "[Fixed] Merge branch dialog updates whether a branch can be merged when changing selection - #19730"
+    ],
+    "3.4.12-beta1": [
+      "[Fixed] Merge branch dialog updates whether a branch can be merged when changing selection - #19730",
+      "[Fixed] Close diff options on mouse down outside of popover - #19644",
+      "[Fixed] Cap output from git at string max length - #19724",
+      "[Improved] Add aria label and aria description to ignore files text area in repository settings - #19684",
+      "[Improved] The link target height of the \"Terms and Conditions\" and \"License and Open Source Notices\" in the about dialog are 24px - #19685",
+      "[Improved] The contrast of the pending checks header text and progress pie chart meets 3:1 contrast requirements - #19687"
+    ],
+    "3.4.11": [
+      "[Fixed] Prevent crash due to excessively long Git output - #19724"
+    ],
+    "3.4.10": [
+      "[Added] Add a banner for communicating when prioritized updates exist - #19655",
+      "[Added] Add \"View Pull Request on GitHub\" Option to the Checked-Out Branch Button and Pull Requests List - #19453. Thanks @DylanDevelops!",
+      "[Fixed] Accurately calculate number of conflicted files in a merge - #8049",
+      "[Fixed] Inform user when a staged renamed file has changes - #17467. Thanks @ssigwart!",
+      "[Fixed] The visual label for the remote url in the repository settings is announced by screen readers - #19647",
+      "[Fixed] Remove duplicate avatar users - #19597",
+      "[Fixed] Fix for indents of clear button in text box - #19613. Thanks @artbutko!",
+      "[Fixed] Screen readers announce the position of the list items in selectable lists such as the history commit list - #19603",
+      "[Fixed] Limit the commit message length we accept - #15355",
+      "[Fixed] Prevent repository not found message for large git status operations - #19583",
+      "[Fixed] Add aria-labelledby and aria-describedby attributes to \"Show whitespace changes?\" popover - #19518",
+      "[Fixed] Fix logical tab order from co-authors text box - #19517",
+      "[Fixed] Allow using Escape to dismiss the commit message warning popover - #19514",
+      "[Improved] Improved appearance of the list of files in 'File size limit exceeded' dialog - #19581",
+      "[Improved] Resize events of resizable elements are announced by screen readers - #19649",
+      "[Improved] Update the names of some JetBrains editors on Linux - #19637. Thanks @ankddev!",
+      "[Improved] Swipe image diffs now handle images with transparency better - #16657 #17735. Thanks @Psychpsyo!",
+      "[Improved] Commit messages now show correct indentation - #17691. Thanks @SuperLlama88888!"
+    ],
+    "3.4.10-beta3": [
+      "[Added] Add a banner for communicating when prioritized updates exist - #19655",
+      "[Fixed] Accurately calculate number of conflicted files in a merge - #8049",
+      "[Fixed] Inform user when a staged renamed file renamed has changes - #17467. Thanks @ssigwart!",
+      "[Fixed] The visual label for the remote url in the repository settings is announced by screen readers - #19647",
+      "[Fixed] Remove duplicate avatar users - #19597",
+      "[Fixed] Fix for indents of clear button in text box - #19613. Thanks @artbutko!",
+      "[Improved] Resize events of resizable elements are announced by screen readers - #19649",
+      "[Improved] Update the names of some JetBrains editors on Linux - #19637. Thanks @ankddev!",
+      "[Improved] Swipe image diffs now handle images with transparency better - #16657 #17735. Thanks @Psychpsyo!",
+      "[Improved] Commit messages now show correct indentation - #17691. Thanks @SuperLlama88888!"
+    ],
+    "3.4.10-beta2": [
+      "[Fixed] Screen readers announce the position of the list items in selectable lists such as the history commit list - #19603",
+      "[Fixed] Limit the commit message length we accept - #15355",
+      "[Fixed] Prevent repository not found message for large git status operations - #19583",
+      "[Improved] Improved appearance of the list of files in 'File size limit exceeded' dialog - #19581"
+    ],
+    "3.4.10-beta1": [
+      "[Added] Add \"View Pull Request on GitHub\" Option to the Checked-Out Branch Button and Pull Requests List - #19453. Thanks @DylanDevelops!",
+      "[Fixed] Add aria-labelledby and aria-describedby attributes to \"Show whitespace changes?\" popover - #19518",
+      "[Fixed] Fix logical tab order from co-authors text box - #19517",
+      "[Fixed] Allow using Escape to dismiss the commit message warning popover - #19514"
+    ],
+    "3.4.9": [
+      "[Fixed] App no longer crash for first time users going through the welcome flow and attempting to sign in more than once - #19442",
+      "[Fixed] Files configured to use the binary merge driver are now treated as binary files when resolving conflicts - #9846",
+      "[Fixed] Fix UI glitch rendering tooltips - #19342",
+      "[Improved] Replace hint text of toggle Co-Authors button with a regular tooltip - #19383",
+      "[Improved] Use OS emojis - #19102",
+      "[Improved] Insert unicode emoji - #19376",
+      "[Improved] Allow resizing Branch and Push/Pull toolbar buttons - #4569 #17388. Thanks @jpedroso!",
+      "[Improved] Upgrade Electron to v32.1.2 - #19334",
+      "[Improved] The commit lists in the \"Commit Reachability\" dialogs are traversable in browse mode of screen readers - #19341",
+      "[Removed] Remove ruleset bypass confirmation modal - #19281. Thanks @lofcz!"
+    ],
+    "3.4.9-beta1": [
+      "[Added] Add support for DDS image files - #5337. Thanks @mkafrin!",
+      "[Fixed] Fix drag and drop by addressing breaking Electron change - #19473",
+      "[Fixed] App no longer crash for first time users going through the welcome flow and attempting to sign in more than once - #19442",
+      "[Improved] Insert unicode emoji - #19376"
+    ],
+    "3.4.8": [
+      "[Fixed] App no longer crash for first time users going through the welcome flow and attempting to sign in more than once"
+    ],
+    "3.4.7": [
+      "[Improved] Support entering GitHub.com as a GitHub Enterprise endpoint - #19342"
+    ],
+    "3.4.7-beta2": [
+      "[Fixed] Fix misaligned resizable toolbar buttons - #19330. Thanks @jpedroso!",
+      "[Fixed] Files configured to use the binary merge driver are now treated as binary files when resolving conflicts - #9846",
+      "[Fixed] Fix UI glitch rendering tooltips - #19342",
+      "[Improved] Support entering GitHub.com as a GitHub Enterprise endpoint - #19342",
+      "[Improved] Replace hint text of toggle Co-Authors button with a regular tooltip - #19383",
+      "[Improved] Use OS emojis - #19102",
+      "[Improved] Upgrade Electron to v32.1.2 - #19334"
+    ],
+    "3.4.7-beta1": [
+      "[Improved] The commit lists in the \"Commit Reachability\" dialogs are traversable in browse mode of screen readers - #19341",
+      "[Removed] Remove ruleset bypass confirmation modal - #19281. Thanks @lofcz!"
+    ],
+    "3.4.6": [
+      "[Fixed] Don't show certificate error dialog when probing for endpoint kind - #18991",
+      "[Fixed] Colorize multi-line strings in toml - #14333",
+      "[Fixed] Unset GIT_SEQUENCE_EDITOR when rebasing - #15413",
+      "[Fixed] Use `api.` subdomain for requests to GHE.com hosts - #19312",
+      "[Fixed] Migrate existing GHE account endpoints to the new `api.` subdomain - #19319",
+      "[Fixed] Right-clicking on diff checkmarks displays the context menu - #19302",
+      "[Fixed] Arguments with spaces are passed correctly to custom editors or shells on Windows - #19218",
+      "[Removed] Remove staggered updates block in about dialog - #19274"
+    ],
+    "3.4.6-beta3": [
+      "[Fixed] Don't show certificate error dialog when probing for endpoint kind - #18991"
+    ],
+    "3.4.6-beta2": [
+      "[Fixed] Colorize multi-line strings in toml - #14333",
+      "[Fixed] Workaround for issues with empty environment variable in third-party tools - #19273",
+      "[Fixed] Unset GIT_SEQUENCE_EDITOR when rebasing - #15413",
+      "[Fixed] Use `api.` subdomain for requests to GHE.com hosts - #19312",
+      "[Fixed] Migrate existing GHE account endpoints to the new `api.` subdomain - #19319",
+      "[Fixed] Right-clicking on diff checkmarks displays the context menu - #19302",
+      "[Removed] Remove staggered updates block in about dialog - #19274"
+    ],
+    "3.4.6-beta1": [
+      "[Fixed] Arguments with spaces are passed correctly to custom editors or shells on Windows - #19218",
+      "[Improved] Allow resizing Branch and Push/Pull toolbar buttons - #4569 #17388. Thanks @jpedroso!"
+    ],
+    "3.4.5-beta2": [
+      "[Fixed] Quotes are preserved in custom integration arguments - #19218",
+      "[Fixed] Symbolic links on Windows can be used as custom editor and shell - #19217"
+    ],
+    "3.4.5": [
+      "[Fixed] Quotes are preserved in custom integration arguments - #19218",
+      "[Fixed] Symbolic links on Windows can be used as custom editor and shell - #19217"
+    ],
+    "3.4.5-beta1": [
+      "[Added] Add Cursor integration for Windows - #19158. Thanks @colinabear!",
+      "[Fixed] Users can clone wiki's - #19152",
+      "[Improved] Inform users when attempting to create a repository out of an existing subdirectory of another repository - #19148",
+      "[Improved] When publishing a new repository, publish the default branch first as opposed to the currently checked out branch - #19151",
+      "[Improved] The \"Create a New Repository\" dialog informs the user of the path to be created - #19147"
+    ],
+    "3.4.4": [
+      "[New] Add support for custom editors and shells - #18954",
+      "[Added] Add Cursor support on macOS - #17462. Thanks @bjorntechCarl!",
+      "[Added] Add JetBrains RustRover support - #18802. Thanks @Radd-Sma!",
+      "[Fixed] The \"Create a New Repository\" dialog allows creation of repositories in repository subfolders - #19137",
+      "[Fixed] Stop improper announcement of \"dialog\" role on the autocompletion suggestions popover - #19114",
+      "[Fixed] The \"Open a Pull Request\" and \"About\" dialog's headings are announced via NVDA - #19107",
+      "[Fixed] The branch selection popover in the \"Open a Pull Request\" dialog does not close on filter clearing - #19106",
+      "[Fixed] The contrast ratio of icon in the diff file warnings is at least 3:1 - #19097",
+      "[Fixed] The \"Push Local Changes\" confirmation dialog users \"alertdialog\" role such that screen readers announce entire dialog contents - #19098",
+      "[Fixed] Emoji's provide descriptions for screen readers - #19101",
+      "[Fixed] Only ask for SSH credentials for the selected repository and only delete them after an authentication error - #19019",
+      "[Improved] Screen readers will announce when users expand context in a diff - #19128",
+      "[Improved] The squash dialog provides visual input labels - #19100",
+      "[Improved] The search inputs across the app provide visual labeling in the form of a search icon - #19103",
+      "[Improved] Use CmdOrCtrl+Q for Exit shortcut on Linux - #19093. Thanks @shiftkey!",
+      "[Improved] Add support for Gnome Console, LXTerminal and Warp shells on Linux - #19092. Thanks @shiftkey!"
+    ],
+    "3.4.4-beta3": [
+      "[Fixed] The custom editor and shell integrations handles when there are no predefined editors or shells - #19160",
+      "[Fixed] The \"Create a New Repository\" dialog allows creation of repositories in repository subfolders - #19137",
+      "[Fixed] Stop improper announcement of \"dialog\" role on the autocompletion suggestions popover - #19114",
+      "[Improved] Screen readers will announce when users expand context in a diff - #19128"
+    ],
+    "3.4.4-beta2": [
+      "[Fixed] The \"Open a Pull Request\" and \"About\" dialog's headings are announced via NVDA - #19107",
+      "[Fixed] The branch selection popover in the \"Open a Pull Request\" dialog does not close on filter clearing - #19106",
+      "[Fixed] Increased contrast ratio of icon in the diff file warnings - #19097",
+      "[Fixed] Use \"alertdialog\" role for \"Push Local Changes\" dialog - #19098",
+      "[Fixed] Add emoji descriptions for screen readers - #19101",
+      "[Improved] The squash dialog provides input labels - #19100",
+      "[Improved] Added search input visual labeling in the form of a search icon - #19103",
+      "[Improved] Use CmdOrCtrl+Q for Exit shortcut on Linux - #19093. Thanks @shiftkey!",
+      "[Improved] Add support for Gnome Console, LXTerminal and Warp shells on Linux - #19092. Thanks @shiftkey!"
+    ],
+    "3.4.4-beta1": [
+      "[New] Add support for custom editors and shells - #18954",
+      "[Added] Add Cursor support on macOS - #17462. Thanks @bjorntechCarl!",
+      "[Added] Add JetBrains RustRover support - #18802. Thanks @Radd-Sma!",
+      "[Fixed] Only ask for SSH credentials for the selected repository and only delete them after an authentication error - #19019"
+    ],
+    "3.4.3": [
+      "[Added] Add Zed as an external editor option for Linux - #18962. Thanks @adil192!",
+      "[Added] Shift + F10 opens context menu's on macOS",
+      "[Fixed] Allow pushing to gists - #19009",
+      "[Fixed] The copy button announces when clicked in VoiceOver.",
+      "[Fixed] Context menu actions in the diff are accessible via keyboard - #18946",
+      "[Fixed] Add/Remove Co-authors hint text is positioned correctly when scrolling through the changes list - #18929",
+      "[Fixed] VoiceOver can now use browser mode on the diff. - #18935",
+      "[Fixed] Increased contrast of several texts and icons in the app - #18922",
+      "[Fixed] Add aria-expanded and aria-controls attributes to Stashed Changes button - #18924",
+      "[Fixed] Hunk header text color contrast ratio is greater than 4.5:1 - #18916"
+    ],
+    "3.4.3-beta3": [
+      "[Added] Add Zed as an external editor option for Linux - #18962. Thanks @adil192!",
+      "[Fixed] Allow pushing to gists - #19009"
+    ],
+    "3.4.3-beta2": [
+      "[Added] Shift + F10 opens context menu's on macOS",
+      "[Fixed] The copy button announces when clicked in VoiceOver."
+    ],
+    "3.4.3-beta1": [
+      "[Fixed] Context menu actions in the diff are accessible via keyboard - #18946",
+      "[Fixed] Add/Remove Co-authors hint text is positioned correctly when scrolling through the changes list - #18929",
+      "[Fixed] VoiceOver can now use browser mode on the diff. - #18935",
+      "[Fixed] Increased contrast of several texts and icons in the app - #18922",
+      "[Fixed] Add aria-expanded and aria-controls attributes to Stashed Changes button - #18924",
+      "[Fixed] Hunk header text color contrast ratio is greater than 4.5:1 - #18916"
+    ],
+    "3.4.2": [
+      "[New] Option to use Git Credential Manager for repositories hosted outside of GitHub.com - #18700",
+      "[New] Allow customizing tab character width in spaces - #15561. Thanks @Repiteo",
+      "[Fixed] Remote urls containing spaces are now displayed in their entirety in the remote settings screen - #18876",
+      "[Fixed] Newly uploaded images are rendered in Pull Request comments and reviews - #18830"
+    ],
+    "3.4.2-beta4": [
+      "[Fixed] Remote urls containing spaces are now displayed in their entirety in the remote settings screen - #18876",
+      "[Fixed] Newly uploaded images are rendered in Pull Request comments and reviews - #18830"
+    ],
+    "3.4.2-beta3": [
+      "[Fixed] Users running Windows on arm64 processors are able to authenticate - #18825"
+    ],
+    "3.4.2-beta2": [
+      "[New] Option to use Git Credential Manager for repositories hosted outside of GitHub.com - #18700"
+    ],
+    "3.4.2-beta1": [
+      "[New] Allow customizing tab character width in spaces - #15561. Thanks @Repiteo",
+      "[Fixed] Using hooks on Windows no longer results in a \"command not found\" error - #18739"
+    ],
+    "3.4.1": [
+      "[Fixed] Using hooks on Windows no longer results in an \"command not found\" error - #18739"
+    ],
+    "3.4.1-beta1": [
+      "[Fixed] Prevent crashes when external editors fail to launch - #17717. Thanks @tsvetilian-ty!",
+      "[Fixed] Fix 'delete branch' message - #18706. Thanks @zetaloop!",
+      "[Improved] Use system feedback to draw user attention when a dialog is shown in background - #17220. Thanks @yuzawa-san!",
+      "[Improved] Upgrade embedded Git to v2.45.1 - #18704",
+      "[Improved] Upgrade Electron to v30.0.8 - #18697"
+    ],
+    "3.4.0": [
+      "[New] Reset to a previous commit - #12393",
+      "[Added] Add accessibility settings to toggle link underlines and diff check marks - #18227, #18035",
+      "[Fixed] Support multiple accounts for remote urls that differ in path - #18676, #18651",
+      "[Fixed] Refreshing repository indicators will not invalidate credentials - #18622",
+      "[Fixed] Clear stored credentials when authentication fails on insecure http hosts - #18588",
+      "[Improved] The generic git auth dialog contents are announced to users of screen readers - #18670",
+      "[Improved] The diff line numbers and line group controls show check marks so color is not the sole medium to determine inclusion into a commit - #18077",
+      "[Improved] Links are underlined by default - #18035"
+    ],
+    "3.3.19-beta2": [
+      "[Fixed] Support multiple accounts for remote urls that differ in path - #18676, #18651",
+      "[Fixed] Refreshing repository indicators will not invalidate credentials - #18622",
+      "[Improved] The generic git auth dialog contents are announced to users of screen readers - #18670"
+    ],
+    "3.3.19-beta1": [
+      "[Fixed] Clear stored credentials when authentication fails on insecure http hosts - #18588"
+    ],
+    "3.3.18": [
+      "[Fixed] Prevent Pull Request comment or review dialog from moving constantly under some circumstances - #18596",
+      "[Fixed] Prevent Pull Request notification dialogs from truncating long Pull Request titles - #18596",
+      "[Fixed] The welcome start flow content does not overlap or clip when zoomed - #18565",
+      "[Fixed] Clear stored credentials when authentication fails on insecure http hosts - #18588",
+      "[Improved] Improved accessibility of checks failed notification dialog by moving \"Re-run checks\" button out of the heading element - #18596",
+      "[Improved] Upgrade embedded Git to v2.43.4 on macOS, and to v2.43.4.windows.1 on Windows"
+    ],
+    "3.3.18-beta3": [
+      "[Improved] Upgrade embedded Git to v2.43.4 on macOS, and to v2.43.4.windows.1 on Windows",
+      "[Removed] Clear stored credentials when authentication fails on insecure http hosts - #18588"
+    ],
+    "3.3.18-beta2": [
+      "[Fixed] Prevent Pull Request comment or review dialog from moving constantly under some circumstances - #18596",
+      "[Fixed] Prevent Pull Request notification dialogs from truncating long Pull Request titles - #18596",
+      "[Fixed] The welcome start flow content does not overlap or clip when zoomed - #18565",
+      "[Improved] Improved accessibility of checks failed notification dialog by moving \"Re-run checks\" button out of the heading element - #18596"
+    ],
+    "3.3.18-beta1": [
+      "[Fixed] Clear stored credentials when authentication fails on insecure http hosts - #18588"
+    ],
+    "3.3.17": [
+      "[Fixed] Pushing and pulling repositories using Git LFS no longer causes an indefinite loop - #18582",
+      "[Improved] Improve the accessibility of the tabs in the preferences dialog for users of screen readers - #18567",
+      "[Improved] Always focus the first focusable element in the preferences dialog on open - #18567"
+    ],
+    "3.3.17-beta1": [
+      "[Fixed] Pushing and pulling repositories using Git LFS no longer causes an indefinite loop - #18582",
+      "[Improved] Improve the accessibility of the tabs in the preferences dialog for users of screen readers - #18567",
+      "[Improved] Always focus the first focusable element in the preferences dialog on open - #18567"
+    ],
+    "3.3.16": [
+      "[Fixed] Resolved auth failures when interacting with repositories hosted on non-GitHub hosts - #18568 #18570 #18569"
+    ],
+    "3.3.16-beta1": [
+      "[Fixed] Resolved auth failures when interacting with repositories hosted on non-GitHub hosts - #18568 #18570 #18569"
+    ],
+    "3.3.15": [
+      "[Added] The diff view now highlights Zig syntax - #17957. Thanks @imkylecat!",
+      "[Fixed] Bring back color to links in PR timeline - #18561",
+      "[Fixed] Remove unnecessary br elements to make the app easier to navigate with screen readers - #18444, #18436",
+      "[Fixed] Prevent clipping of dialog controls and content when app is zoomed - #18412",
+      "[Improved] Make sure the arrow path in a dropdown button can't receive focus - #18562",
+      "[Improved] Increase contrast on modified and conflicted octicons - #18560"
+    ],
+    "3.3.15-beta2": [
+      "[Fixed] Bring back color to links in PR timeline - #18561",
+      "[Improved] Make sure the arrow path in a dropdown button can't receive focus - #18562",
+      "[Improved] Increase contrast on modified and conflicted octicons - #18560",
+      "[Improved] Add banner to announce the accessibility settings - #18460"
+    ],
+    "3.3.15-beta1": [
+      "[New] Reset to a previous commit - #12393",
+      "[Added] The diff view now highlights Zig syntax - #17957. Thanks @imkylecat!",
+      "[Fixed] Remove unnecessary br elements to make the app easier to navigate with screen readers - #18444, #18436",
+      "[Fixed] Prevent clipping of dialog controls and content when app is zoomed - #18412"
+    ],
+    "3.3.14": [
+      "[Fixed] The tab panel semantics in the \"Publish Repository\" and \"Clone a Repository\" are announced by screen readers - #18408",
+      "[Fixed] The check all button in the diff always only represents one selectable group - #18422",
+      "[Fixed] Images diffs of less than 200px in width do not render with a zero width for diff views other than `2-up` - #18405",
+      "[Fixed] Fix list accessibility semantics of the Pull Request list - #18397",
+      "[Fixed] Fix screen reader support of warning dialogs - #18371",
+      "[Fixed] Selecting the \"Configure manually\" radio option does not cause unexpected focus shift to the name input in the Git Configuration page of the welcome flow - #18341",
+      "[Fixed] All dialogs can be closed by pressing Esc - #18335",
+      "[Improved] The force push warning in the push dropdown now has a contrast of 4.5:1 - #18415",
+      "[Improved] Hyphen replacement and invalid sanitized name warnings and errors in the create branch and create repository dialogs are associated to the input by the aria-describedby attribute - #18404",
+      "[Improved] Add VapourSynth script files (.vpy) to test/x-python - #18364. Thanks @couleurm!",
+      "[Improved] The text contrast of tutorial steps when closed is 4.5:1 - #18342",
+      "[Improved] Upgrade to Electron v28.2.3 - #18185",
+      "[Removed] Remove support for macOS 10.13 and 10.14 - #18316"
+    ],
+    "3.3.14-beta2": [
+      "[Fixed] The tab panel semantics in the \"Publish Repository\" and \"Clone a Repository\" are announced by screen readers - #18408",
+      "[Fixed] The check all button in the diff always only represents one selectable group - #18422",
+      "[Improved] The force push warning in the push dropdown now has a contrast of 4.5:1 - #18415"
+    ],
+    "3.3.14-beta1": [
+      "[Fixed] Images diffs of less than 200px in width do not render with a zero width for diff views other than `2-up` - #18405",
+      "[Fixed] Fix list accessibility semantics of the Pull Request list - #18397",
+      "[Fixed] Fix screen reader support of warning dialogs - #18371",
+      "[Fixed] Selecting the \"Configure manually\" radio option does not cause unexpected focus shift to the name input in the Git Configuration page of the welcome flow - #18341",
+      "[Fixed] All dialogs can be closed by pressing Esc - #18335",
+      "[Improved] Hypen replacement and invalid sanitized name warnings and errors in the create branch and create repository dialogs are associated to the input by the aria-describedby attribute - #18404",
+      "[Improved] Add VapourSynth script files (.vpy) to test/x-python - #18364. Thanks @couleurm!",
+      "[Improved] The text contrast of tutorial steps when closed is 4.5:1 - #18342"
+    ],
+    "3.3.13": [
+      "[Fixed] Fix layout issues in 2-up image diffing when images are too small - #18313",
+      "[Fixed] The \"Show whitespace changes?\" popover can be closed by pressing Escape - #18314",
+      "[Fixed] Added announcing the number of results to the diff search via screen readers - #18306",
+      "[Improved] Git errors due to bad config values are surfaced in the UI - #18230",
+      "[Improved] The pull request check run popover is now keyboard accessible - #18276",
+      "[Improved] The pull request check run popover button is now keyboard accessible - #18268",
+      "[Improved] Add the aria-label attribute to our markdown iframes to clarify their purpose to users of screen readers in browse mode.  - #18277",
+      "[Improved] Add support for newer versions of Alacritty shell - #16614. Thanks @lhvy!",
+      "[Improved] Upgrade embedded Git to v2.43.3 on macOS, and to v2.43.0.windows.1 on Windows, and Git LFS to v3.5.1 - #18292"
+    ],
+    "3.3.13-beta1": [
+      "[Fixed] Fix layout issues in 2-up image diffing when images are too small - #18313",
+      "[Fixed] The \"Show whitespace changes?\" popover can be closed by pressing Escape - #18314",
+      "[Removed] Remove support for macOS 10.13 and 10.14 - #18316"
+    ],
+    "3.3.12": [
+      "[Fixed] On Windows, PATH environment variable with values longer than 1024 are not truncated - #18244",
+      "[Improved] Added semantic and keyboard accessible check all button for a groups of consecutive selectable rows in the diff - #18201",
+      "[Improved] Prevent upgrading from macOS 10.13 and 10.14 as soon to be unsupported - #18316",
+      "[Improved] Update banners will only dismiss when closing with the dismiss button - #18319",
+      "[Improved] Add the \"link\" role to the \"Open pull request\" button in tutorial sidebar - #18245"
+    ],
+    "3.3.12-beta3": [
+      "[Fixed] Bring back support for macOS 10.13 and 10.14 and prevent upgrading from them - #18316",
+      "[Fixed] Added announcing the number of results to the diff search via screen readers - #18306",
+      "[Improved] Update banners will only dismiss when closing with the dismiss button - #18319"
+    ],
+    "3.3.12-beta2": [
+      "[Improved] The pull request check run popover is now keyboard accessible - #18276",
+      "[Improved] The pull request check run popover button is now keyboard accessible - #18268",
+      "[Improved] Add the aria-label attribute to our markdown iframes to clarify their purpose to users of screen readers in browse mode.  - #18277",
+      "[Improved] Add support for newer versions of Alacritty shell - #16614. Thanks @lhvy!",
+      "[Improved] Upgrade embedded Git to v2.43.3 on macOS, and to v2.43.0.windows.1 on Windows, and Git LFS to v3.5.1 - #18292",
+      "[Improved] Git errors due to bad config values are surfaced in the UI - #18230"
+    ],
+    "3.3.12-beta1": [
+      "[Fixed] In the changes diff, groups of two rows that represent one line number change have a check all control - #18232",
+      "[Fixed] Copying lines in side by side diffs does not add new lines between each line when pasted - #18249",
+      "[Fixed] On Windows, PATH environment variable with values longer than 1024 are not truncated - #18244",
+      "[Fixed] The last lines in diffs are visible when warning banners are displayed - #18237",
+      "[Improved] Add the \"link\" role to the \"Open pull request\" button in tutorial sidebar - #18245",
+      "[Improved] Upgrade to Electron v28.2.3 - #18185"
+    ],
+    "3.3.11": [
+      "[Fixed] Copying lines in the side by side diff does not add new lines between each line when pasted. - #18249"
+    ],
+    "3.3.10": [
+      "[Fixed] The last lines in diffs are visible when warning banners are displayed - #18237",
+      "[Fixed] Ignore a file's parent directories on Windows. - #1203"
+    ],
+    "3.3.10-beta1": [
+      "[Added] Added visible and semantic check all button for a group of consecutive selectable rows in the diff - #18201",
+      "[Fixed] Ignore a file's parent directories on Windows - #18206",
+      "[Improved] Add a setting for visibility of diff check marks when committing - #18227",
+      "[Improved] Add support for toggling link underlines globally - #18035"
+    ],
+    "3.3.9": [
+      "[Fixed] The line number inclusion controls are semantic checkboxes and are keyboard accessible - #18064",
+      "[Fixed] Copying commit SHAs from submodule diffs is keyboard accessible - #18124",
+      "[Fixed] Show avatars of bot accounts such as dependabot - #12766",
+      "[Fixed] Focus outline is visible on the diff - #18086",
+      "[Fixed] Selecting or deselecting lines in a diff by dragging the mouse now scrolls the contents as needed - #17673",
+      "[Fixed] Last line of diffs can be selected when the file didn't have a new line at the end - #18081",
+      "[Fixed] Promote line endings change warning from icon to a banner, improving its accessibility - #18084",
+      "[Fixed] Amending a commit in non-GitHub repositories restores the commit message - #18061",
+      "[Fixed] The merge dialog submit button is available when conflicts are detected - #18037",
+      "[Fixed] Avatars are once again loading for GitHub Enterprise Server users - #18034",
+      "[Fixed] Lists scroll and render as expected when scrolling by dragging the scrollbar on Windows - #18012",
+      "[Fixed] External editor or shell failure error will open to integration settings - #18021. Thanks @yasuking0304!",
+      "[Improved] Add `pyi` to syntax highlighting - #18141. Thanks @pLeBlanc93!",
+      "[Improved] Syntax highlighting now supports .cmake, .cxx, .hh, .hxx, and .xsd files - #17503. Thanks @DylanDevelops!",
+      "[Improved] Apply Markdown highlighting to .mdx files - #18040. Thanks @bentookey-yotta!",
+      "[Improved] Implemented folder ignore with all parent directories - #1203. Thanks @masecla22!"
+    ],
+    "3.3.9-beta2": [
+      "[Fixed] The line number inclusion controls are semantic checkboxes and are keyboard accessible - #18064",
+      "[Fixed] Copying commit SHAs from submodule diffs is keyboard accessible - #18124",
+      "[Fixed] Show avatars of bot accounts such as dependabot - #12766",
+      "[Fixed] Focus outline is visible on the diff - #18086",
+      "[Fixed] Selecting or deselecting lines in a diff by dragging the mouse now scrolls the contents as needed - #17673",
+      "[Fixed] Last line of diffs can be selected when the file didn't have a new line at the end - #18081",
+      "[Fixed] Promote line endings change warning from icon to a banner, improving its accessibility - #18084",
+      "[Fixed] Amending a commit in non-GitHub repositories restores the commit message - #18061",
+      "[Improved] Add `pyi` to syntax highlighting - #18141. Thanks @pLeBlanc93!",
+      "[Improved] Syntax highlighting now supports .cmake, .cxx, .hh, .hxx, and .xsd files - #17503. Thanks @DylanDevelops!",
+      "[Improved] Apply Markdown highlighting to .mdx files - #18040. Thanks @bentookey-yotta!",
+      "[Improved] The diff line numbers show check marks so color is not the sole medium to determine inclusion into a commit - #18077"
+    ],
+    "3.3.9-beta1": [
+      "[Fixed] The merge dialog submit button is available when conflicts are detected - #18037",
+      "[Fixed] Avatars are once again loading for GitHub Enterprise Server users - #18034",
+      "[Fixed] Lists scroll and render as expected when scrolling by dragging the scrollbar on Windows - #18012",
+      "[Fixed] External editor or shell failure error will open to integration settings - #18021. Thanks @yasuking0304!",
+      "[Improved] Implemented folder ignore with all parent directories - #1203. Thanks @masecla22!"
+    ],
+    "3.3.8": [
+      "[Fixed] The merge dialog submit button is available when conflicts are detected. - #18037",
+      "[Fixed] Avatars are once again loading for GitHub Enterprise Server users. - #18036"
+    ],
+    "3.3.7": [
+      "[Fixed] Merge branch dialog's merge preview no longer shows stale merge check data - #17929",
+      "[Fixed] Co-authors are restored as such when a commit is amended - #17879",
+      "[Fixed] Tags with commas are no longer truncated to the first comma - #17952",
+      "[Fixed] The \"Reveal in Finder\" context menu option in the conflict resolution dialog no longer causes Finder to be unresponsive - #17933",
+      "[Fixed] Clicking on the commit message length warning does not close the squash commit dialog - #17966",
+      "[Fixed] Fix Alacritty bundle ID on macOS - #17940. Thanks @JannesMeyer!",
+      "[Fixed] Merge branch dialog no longer shows flickering merge preview when switching branches - #17948. Thanks @GengShengJia!",
+      "[Fixed] Diff no longer jumps when scrolling after pressing expansion buttons - #17776",
+      "[Fixed] Use list semantics in job step lists for improved accessibility - #17855",
+      "[Fixed] Fix heading levels used in dialogs for improved accessibility - #17848",
+      "[Improved] Replace the \"Default branch name for new repositories\" radio button setting with a more accessible and inclusive textbox input and description - #17844",
+      "[Improved] The \"You're Done\" header is focused after tutorial completion so it is announced and screen reader users are made aware of the completion screen - #17835",
+      "[Improved] Checkboxes always have unique id's for label association - #17839",
+      "[Improved] Better visibility of checkbox focus indicator - #17842",
+      "[Improved] Improve inclusivity and clarification of branch name change warning.  - #17866",
+      "[Improved] Focus moves to closest expansion button or diff container after expansion - #17499",
+      "[Improved] Tooltips can be dismissed with the escape key - #17823, #17836",
+      "[Improved] Semantically grouping our settings radio and checkbox groups so their group headers will be announced to screen reader users. - #17787",
+      "[Improved] The \"Other\" email description is announced on input focus in the git config form - #17785",
+      "[Improved] Move the repository list on the \"Let's get started!\" screen to the left hand side so it can be the first logical tab placement.  - #17821",
+      "[Improved] Increased the specificity of the \"Sign In\" and \"Sign Out\" buttons in the Account settings - #17794"
+    ],
+    "3.3.7-beta3": [
+      "[Fixed] Merge branch dialog's merge preview no longer shows stale merge check data - #17929",
+      "[Fixed] Co-authors are restored as such when a commit is amended - #17879",
+      "[Fixed] Tags with commas are no longer truncated to the first comma - #17952",
+      "[Fixed] The \"Reveal in Finder\" context menu option in the conflict resolution dialog no longer causers Finder to be unresponsive - #17933",
+      "[Fixed] Clicking on the commit message length warning does not close the squash commit dialog - #17966",
+      "[Fixed] Fix Alacritty bundle ID on macOS - #17940. Thanks @JannesMeyer!",
+      "[Fixed] Merge branch dialog no longer shows flickering merge preview when switching branches - #17948. Thanks @GengShengJia!",
+      "[Improved] Improve inclusivity and clarification of branch name change warning.  - #17866"
+    ],
+    "3.3.7-beta2": [
+      "[Fixed] Use list semantics in job step lists for improved accessibility - #17855",
+      "[Fixed] Fix heading levels used in dialogs for improved accessibility - #17848",
+      "[Improved] Replace the \"Default branch name for new repositories\" radio button setting with a more accessible and inclusive textbox input and description - #17844",
+      "[Improved] The \"You're Done\" header is focused after tutorial completion so it is announced and screen reader users are made aware of the completion screen - #17835",
+      "[Improved] Checkboxes always have unique id's for label association - #17839",
+      "[Improved] Better visibility of checkbox focus indicator - #17842",
+      "[Improved] By default, tooltips can be dismissed with the escape key - #17836"
+    ],
+    "3.3.7-beta1": [
+      "[Fixed] Diff no longer jumps when scrolling after pressing expansion buttons - #17776",
+      "[Improved] Focus moves to closes expansion button or diff container after expansion - #17499",
+      "[Improved] Tooltips can be dismissed with the escape key - #17823",
+      "[Improved] Semantically grouping our settings radio and checkbox groups so their group headers will be announced to screen reader users. - #17787",
+      "[Improved] The \"Other\" email description is announced on input focus in the git config form - #17785",
+      "[Improved] Move the repository list on the \"Let's get started!\" screen to the left hand side so it can be the first logical tab placement.  - #17821",
+      "[Improved] Increased the specificity of the \"Sign In\" and \"Sign Out\" buttons in the Account settings - #17794"
+    ],
+    "3.3.6": [
+      "[Fixed] Previewing a pull request with a deleted image file no longer errors with \"The path does not exist on disk\".  - #17659",
+      "[Fixed] Empty lines are included when copying text from diffs - #17652",
+      "[Fixed] A copied full line from a diff now includes a trailing newline  - #17652",
+      "[Fixed] Creating pull requests from a renamed branch uses the branch name in the remote - #17628",
+      "[Fixed] On macOS Sonoma, the VoiceOver regression preventing our dialog headers announcements has been fixed. - #17631",
+      "[Fixed] Squash dialog is not shown again after finishing another squashing operation where uncommitted changes were present and had to be stashed - #17627",
+      "[Improved] Added the ability to open your global .gitconfig file in your selected external editor - #17544. Thanks @DylanDevelops!",
+      "[Improved] Fixed `Github` -> `GitHub` typo in repository settings - #17697. Thanks @WilliamDavidHarrison!",
+      "[Improved] Screen readers announce group name when navigating through grouped lists - #17567",
+      "[Improved] The history commit summary header is now expandable making the tool-tipped meta data keyboard accessible - #17557.",
+      "[Improved] Reordering commits is now keyboard accessible - #17671",
+      "[Improved] The conflicts resolution dialog now has a success banner that is screen reader announced that summarize actions taken - #17687",
+      "[Improved] The pull request branch selection popover header is announced by screen readers. - #17631",
+      "[Improved] Prevent possible duplicate announcement of button labeling to screen reader users - #17706",
+      "[Improved] Improve keyboard and screen reader support for banners - #17542"
+    ],
+    "3.3.6-beta4": [
+      "[Fixed] Previewing a pull request with a deleted image file no longer errors with \"The path does not exist on disk\".  - #17659",
+      "[Improved] Commit summary descriptions are scrollable when the content is long - #17708"
+    ],
+    "3.3.6-beta3": [
+      "[Fixed] A copied full line from a diff now includes a trailing newline  - #17652",
+      "[Fixed] Squash dialog is not shown again after finishing another squashing operation where uncommitted changes were present and had to be stashed - #17627",
+      "[Improved] The conflicts resolution dialog now has a success banner that is screen reader announced that summarize actions taken - #17687",
+      "[Improved] Added the ability to open your global .gitconfig file in your selected external editor - #17544. Thanks @DylanDevelops!",
+      "[Improved] Fixed `Github` -> `GitHub` typo in repository settings - #17697. Thanks @WilliamDavidHarrison!",
+      "[Improved] Reordering commits is now keyboard accessible - #17671",
+      "[Improved] Prevent possible duplicate announcement of button labeling to screen reader users - #17706",
+      "[Improved] Prevent multiple announcing of success banners with Windows NVDA screen reader  - #17705"
+    ],
+    "3.3.6-beta2": [
+      "[Fixed] Empty lines are included when copying text from diffs - #17652"
+    ],
+    "3.3.6-beta1": [
+      "[Fixed] Creating pull requests from a renamed branch uses the branch name in the remote - #17628",
+      "[Fixed] On macOS Sonoma, the VoiceOver regression preventing our dialog headers announcements has been fixed. - #17631",
+      "[Improved] The pull request branch selection popover header is announced by screen readers. - #17631",
+      "[Improved] Improve keyboard and screen reader support for banners - #17542",
+      "[Improved] The commit summary description overflow is limited to two lines when collapsed. - #17618",
+      "[Improved] The commit summary description has a grey background color when expanded. - #17618"
+    ],
+    "3.3.5": [
+      "[Added] Syntax highlighting now supports .cc files - #17503. Thanks @DylanDevelops!",
+      "[Fixed] Long file paths are correctly truncated in the conflicts dialog - #17595"
+    ],
+    "3.3.5-beta1": [
+      "[Added] Syntax highlighting now supports .cc files - #17503. Thanks @DylanDevelops!",
+      "[Fixed] Long file paths are correctly truncated in the conflicts dialog - #17595",
+      "[Fixed] Screen readers announce group name when navigating through grouped lists - #17567",
+      "[Fixed] The history commit summary header is now expandable making the tool-tipped meta data keyboard accessible - #17557."
+    ],
+    "3.3.4": [
+      "[Added] Added Cursor support on macOS - #17462. Thanks @bjorntechCarl!",
+      "[Added] Add support for Pulsar code editor on Linux - #17397. Thanks @Daeraxa!",
+      "[Added] Add Eclipse IDE integrations for macOS - #16991. Thanks @yuzawa-san!",
+      "[Fixed] Fix JetBrains PhpStorm capitalization - #17505. Thanks @imkylecat!",
+      "[Fixed] Screen readers announce contents of error dialog when attempting to perform certain operations while local changes are present - #17519",
+      "[Fixed] Screen readers announce contents of app error dialogs - #17479",
+      "[Fixed] Screen readers announce contents of merge, rebase, interactive rebase abort confirmation dialogs - #17478",
+      "[Fixed] Pasting long texts in the commit summary textbox does not show a scrollbar in the left pane - #17472",
+      "[Fixed] Tab characters in diffs are rendered correctly - #8616",
+      "[Fixed] Close button in release notes dialog can be clicked - #17438",
+      "[Fixed] Scrolling works as expected in the \"Commit Reachability\" dialog - #17421",
+      "[Fixed] Tip of comment bubbles in Pull Request notifications is rendered correctly - #17411",
+      "[Improved] Added a setting to allow toggling the availability of the commit message length warning - #17370. Thanks @rystills!",
+      "[Improved] Added accessibility label to filter textbox in the History tab - #17488",
+      "[Improved] Improved clarity of the structure of dialogs by using `h2` elements for their titles - #17483",
+      "[Improved] Display co-authors button additional information when it's focused via keyboard navigation - #17464",
+      "[Improved] When focusing the rebase/merge/squash button, screen readers announce the outcome of the operation - #17448",
+      "[Improved] Clarified the outcome of toggling the setting under \"Background Updates\" in the \"Advanced\" settings - #17389",
+      "[Improved] Undo link when resolving conflicts is now a button - #17373"
+    ],
+    "3.3.4-beta3": [
+      "[Fixed] Screen readers announce contents of error dialog when attempting to perform certain operations while local changes are present - #17519",
+      "[Fixed] Fix JetBrains PhpStorm capitalization - #17505. Thanks @imkylecat!",
+      "[Improved] Upgrade to Electron v26.2.4 - #17524",
+      "[Improved] Upgrade node to 18.16.1 - #17453"
+    ],
+    "3.3.4-beta2": [
+      "[Added] Added Cursor support on macOS - #17462. Thanks @bjorntechCarl!",
+      "[Fixed] Screen readers announce contents of app error dialogs - #17479",
+      "[Fixed] Screen readers announce contents of merge, rebase, interactive rebase abort confirmation dialogs - #17478",
+      "[Fixed] Pasting long texts in the commit summary textbox does not show a scrollbar in the left pane - #17472",
+      "[Fixed] Tab characters in diffs are rendered correctly - #8616",
+      "[Improved] Added accessibility label to filter textbox in the History tab - #17488",
+      "[Improved] Improved clarity of the structure of dialogs by using `h2` elements for their titles - #17483",
+      "[Improved] Display co-authors button additional information when it's focused via keyboard navigation - #17464",
+      "[Improved] When focusing the rebase/merge/squash button, screen readers announce the outcome of the operation - #17448"
+    ],
+    "3.3.4-beta1": [
+      "[Fixed] Close button in release notes dialog can be clicked - #17438",
+      "[Fixed] Scrolling works as expected in the \"Commit Reachability\" dialog - #17421",
+      "[Improved] Upgrade to Electron v26.2.1 - #17408"
+    ],
+    "3.3.3": ["[Improved] Upgrade to Electron v24.8.3 - #17416"],
+    "3.3.3-beta2": ["[Improved] Upgrade to Electron v24.8.3 - #17416"],
+    "3.3.3-beta1": [
+      "[Added] Add support for Pulsar code editor on Linux - #17397. Thanks @Daeraxa!",
+      "[Added] Add Eclipse IDE integrations for macOS - #16991. Thanks @yuzawa-san!",
+      "[Improved] Added a setting to allow toggling the availability of the commit message length warning - #17370. Thanks @rystills!",
+      "[Improved] Clarified the outcome of toggling the setting under \"Background Updates\" in the \"Advanced\" settings - #17389",
+      "[Fixed] Tip of comment bubbles in Pull Request notifications is rendered correctly - #17411",
+      "[Improved] Undo link when resolving conflicts is now a button - #17373"
+    ],
+    "3.3.2": [
+      "[Fixed] Use forked repository when checking repo rules on forks - #17382. Thanks @vaindil!",
+      "[Fixed] On macOs, the scroll bar only present when scrolling no longer overlaps conflict resolution buttons - #17374",
+      "[Fixed] Allow rebasing even when the branch is a direct descendant of the base branch - #17260",
+      "[Fixed] Branch name pattern regex no longer causes an automatic failure in the \"Create a Branch\" dialog. - #17392",
+      "[Fixed] Make clear button in input text boxes keyboard accessible - #17324",
+      "[Fixed] Make the create and clone repository dialogs accessible when the app is zoomed in and the window is small - #17337",
+      "[Fixed] Fix keyboard navigation in filtered lists - #17311",
+      "[Fixed] Pressing Tab from the \"Select branch to compare…\" filter input textbox focuses on the first branch in the list - #17314",
+      "[Fixed] Fix \"Invalid numstat line\" error when trying to preview a pull request - #17267",
+      "[Improved] After undo, the focus is set to the changes tab instead of the entire document body - #17387",
+      "[Improved] Commit text inputs retain focus while committing - #17283"
+    ],
+    "3.3.2-beta2": [
+      "[Fixed] Use forked repository when checking repo rules on forks - #17382. Thanks @vaindil!",
+      "[Fixed] On macOs, the scroll bar only present when scrolling no longer overlaps conflict resolution buttons - #17374",
+      "[Fixed] Allow rebasing even when the branch is a direct descendant of the base branch - #17260",
+      "[Fixed] Branch name pattern regex no longer causes an automatic failure in the \"Create a Branch\" dialog. - #17392",
+      "[Improved] After undo, the focus is set to the changes tab instead of the entire document body - #17387"
+    ],
+    "3.3.2-beta1": [
+      "[Fixed] Support the repository rule to enforce commit signing - #17310",
+      "[Fixed] Make clear button in input text boxes keyboard accessible - #17324",
+      "[Fixed] Make the create and clone repository dialogs accessible when the app is zoomed in and the window is small - #17337",
+      "[Fixed] Fix keyboard navigation in filtered lists - #17311",
+      "[Fixed] Pressing Tab from the \"Select branch to compare…\" filter input textbox focuses on the first branch in the list - #17314",
+      "[Fixed] Fix \"Invalid numstat line\" error when trying to preview a pull request - #17267",
+      "[Improved] Commit text inputs retain focus while committing - #17283"
+    ],
+    "3.3.1": [
+      "[Fixed] Support the repository rule to enforce commit signing - #17310",
+      "[Fixed] Keyboard navigation in lists reintroduced - #17313"
+    ],
+    "3.3.0": [
+      "[New] Initial support for repository rules - #16707",
+      "[Fixed] Recreate stash after renaming branch - #16442",
+      "[Fixed] Fix loop creating a new repository that already exists, or trying to add a repository that doesn't exist - #17262",
+      "[Fixed] Allow cloning repositories that have git as a suffix - #17221",
+      "[Fixed] Fix accessibility semantics of root items of the app menu bar - #17254",
+      "[Fixed] Double clicking the checkbox of a changed file does not open that file in the external editor - #17229",
+      "[Fixed] Expand buttons in the diff are keyboard navigable. - #17212",
+      "[Improved] Improve light mode color contrast of lines added and deleted - #17206",
+      "[Improved] Dropdown select buttons have aria attributes  - #17271",
+      "[Improved] Dropdown select button menu items are keyboard navigable and have aria attributes - #17271",
+      "[Improved] Prevent interrupting verbose announcements of branch count on branch dropdown open for screen reader users - #17225"
+    ],
+    "3.2.10-beta2": [
+      "[Fixed] Fix loop creating a new repository that already exists, or trying to add a repository that doesn't exist - #17262",
+      "[Fixed] Allow cloning repositories that have git as suffix - #17221",
+      "[Fixed] Fix accessibility semantics of root items of the app menu bar - #17254",
+      "[Improved] Dropdown select buttons have aria attributes  - #17271",
+      "[Improved] Dropdown select buttons menu is keyboard navigable and have aria attributes - #17271",
+      "[Improved] Prevent interrupting verbose announcements of branch count on branch dropdown open for screen reader users - #17225"
+    ],
+    "3.2.10-beta1": ["[Fixed] Fix the inability to log into GHES - #17237"],
+    "3.2.9": ["[Fixed] Fix the inability to log into GHES - #17237"],
+    "3.2.9-beta1": [
+      "[Fixed] Double clicking the checkbox of a changed file does not open that file in the external editor - #17229",
+      "[Fixed] Expand buttons in the diff are keyboard navigable. - #17212",
+      "[Improved] Improve light mode color contrast of lines added and deleted - #17206"
+    ],
+    "3.2.8": [
+      "[New] Checkout a commit from the History tab - #10068. Thanks @kitswas!",
+      "[New] Add Double Click to Open in Default Editor - #2620. Thanks @digitalmaster!",
+      "[New] Show when a repository has been archived in the clone dialog - #7183",
+      "[Added] Add Zed Preview as an external editor option - #17097. Thanks @filiptronicek!",
+      "[Added] Add support for Pulsar code editor on Windows - #17120. Thanks @confused-Techie!",
+      "[Fixed] The force push loading state is screen reader announced - #17116",
+      "[Fixed] Improve readability of file statuses for keyboard-only users - #17192",
+      "[Fixed] Fix detection of VSCodium Insiders for Windows - #17078. Thanks @voidei!",
+      "[Fixed] Enable context menu keyboard shortcut for file lists - #17143",
+      "[Fixed] Adds a workaround for the macOS Ventura `aria-labelledby` and `aria-describedby` regressions such that dialog titles are always announced - #17148",
+      "[Fixed] Screen readers announce the status of files within a commit - #17144",
+      "[Fixed] Fix not recognizing remote for partial clone/fetch - #16284. Thanks @mkafrin!",
+      "[Fixed] Fix association of repositories using nonstandard usernames - #17024",
+      "[Improved] Screen readers announce \"overwrite stash\" and \"discard stash\" confirmation dialogs - #17197",
+      "[Improved] Screen readers announce contents of Delete Tag confirmation dialog - #17166",
+      "[Improved] The stash restore button's description is associated to the restore button - #17204",
+      "[Improved] The delete branch dialog's contents are announced as alert dialogs. - #17210",
+      "[Improved] Improve branch dropdown tabs screen reader support - #17172",
+      "[Improved] The rename dialog warnings are placed before the branch name input - #17164",
+      "[Improved] The \"Restore\" button in stashed changes is not disabled when uncommitted changes are present - #12994. Thanks @samuelko123!",
+      "[Improved] Improve contrast of text to links in dark and light themes - #17092",
+      "[Improved] The errors and warnings in the \"Create a New Repository\" dialog are screen reader announced - #16993",
+      "[Improved] Add `aria-label` and `aria-expanded` attributes to diff options button - #17062",
+      "[Improved] Screen readers announce the number of pull requests found after refreshing the list - #17031",
+      "[Improved] The context menu for the History view items can be invoked by keyboard shortcuts - #17035"
+    ],
+    "3.2.8-beta4": [
+      "[Fixed] Fix selecting/deselecting changed files with the keyboard - #17207. Thanks @koenpunt!",
+      "[Improved] The stash restore button's description is associated to the restore button - #17204",
+      "[Improved] The delete branch dialog's contents are announced as alert dialogs. - #17210"
+    ],
+    "3.2.8-beta3": [
+      "[Added] Add Zed Preview as an external editor option - #17097. Thanks @filiptronicek!",
+      "[Added] Add support for Pulsar code editor on Windows - #17120. Thanks @confused-Techie!",
+      "[Fixed] The force push loading state is screen reader announced - #17116",
+      "[Fixed] Allow screen readers to announce \"overwrite stash\" and \"discard stash\" confirmation dialogs - #17197",
+      "[Fixed] Improve readability of file statuses for keyboard-only users - #17192",
+      "[Fixed] Screen readers announce contents of Delete Tag confirmation dialog - #17166",
+      "[Fixed] Fix detection of VSCodium Insiders for Windows - #17078. Thanks @voidei!",
+      "[Improved] Improve branch dropdown tabs screen reader support - #17172",
+      "[Improved] The rename dialog warnings are placed before the branch name input - #17164",
+      "[Improved] The \"Restore\" button in stashed changes is not disabled when uncommitted changes are present - #12994. Thanks @samuelko123!"
+    ],
+    "3.2.8-beta2": [
+      "[New] Initial support for repository rules - #16707. Thanks @vaindil!",
+      "[Fixed] Enable context menu keyboard shortcut for file lists - #17143",
+      "[Fixed] Adds a workaround for the macOS Ventura `aria-labelledby` and `aria-describedby` regressions such that dialog titles are always announced - #17148",
+      "[Fixed] Screen readers announce branch group names correctly when there are no recent branches - #17142",
+      "[Fixed] Screen readers announce the status of files within a commit - #17144",
+      "[Improved] Improve contrast of text to links in dark and light themes - #17092",
+      "[Improved] The errors and warnings in the \"Create a New Repository\" dialog are screen reader announced - #16993"
+    ],
+    "3.2.8-beta1": [
+      "[Fixed] Fix not recognizing remote for partial clone/fetch - #16284. Thanks @mkafrin!",
+      "[Fixed] Fix association of repositories using nonstandard usernames - #17024",
+      "[Improved] Add aria-label and aria-expanded attributes to diff options button - #17062",
+      "[Improved] Screen readers announce number of pull requests found after refreshing the list - #17031",
+      "[Improved] The context menu for the History view items can be invoked by keyboard shortcuts - #17035"
+    ],
+    "3.2.7": [
+      "[Fixed] Improved performance when selecting and viewing a large number of commits - #16880",
+      "[Fixed] Fix crash using Edit -> Copy menu when no text is selected in the diff - #16876",
+      "[Fixed] Emoji autocomplete list highlights filter text correctly - #16899",
+      "[Fixed] Allow filtering autocomplete results using uppercase characters - #16886"
+    ],
+    "3.2.7-beta2": [
+      "[New] Checkout a commit from the History tab - #10068. Thanks @kitswas!",
+      "[New] Show when a repository has been archived in the clone dialog - #7183",
+      "[Fixed] \"Clone a Repository\" dialog list is keyboard navigable - #16977",
+      "[Improved] Checkboxes in dialogs can receive initial keyboard focus - #17014",
+      "[Improved] The progress state of the pull, push, fetch button is announced by screen readers - #16985",
+      "[Improved] Inline errors are consistently announced by screen readers - #16850",
+      "[Improved] Group title and position is correctly announced by screen readers in repository and branch lists - #16968"
+    ],
+    "3.2.7-beta1": [
+      "[Fixed] Recreate stash after renaming branch - #16442",
+      "[Fixed] Improved performance when selecting and viewing a large number of commits - #16880",
+      "[Fixed] Preferences renamed to Settings on macOS to follow platform convention - #16907",
+      "[Fixed] Allow filtering autocomplete results using uppercase characters - #16886",
+      "[Fixed] Emoji autocomplete list highlights filter text correctly - #16899",
+      "[Fixed] Fix crash using Edit -> Copy menu when no text is selected in the diff - #16876",
+      "[Fixed] The list of the repositories under the filter box on the \"Let's get started!\" page is visible - #16955",
+      "[Improved] The \"pull, push, fetch\" dropdown button has an aria-label for screen reader users - #16839",
+      "[Improved] The aria role of alert is applied to dialog error banners so they are announced by screen readers - #16809",
+      "[Improved] Add Double Click to Open in Default Editor - #2620. Thanks @digitalmaster!",
+      "[Improved] Upgrade to Electron v24.4.0 - #15831"
+    ],
+    "3.2.6": [
+      "[Fixed] The list of the repositories under the filter box on the \"Let's get started!\" page is visible - #16955"
+    ],
+    "3.2.5": [
+      "[Fixed] Entering in double forward slash does not trim the target directory in the cloning dialog - #15842. Thanks @IgnazioGul!",
+      "[Fixed] In the \"No Repositories\" screen, controls at the bottom stay inside window when it is resized - #16502. Thanks @samuelko123!",
+      "[Fixed] Link to editor settings on the tutorial screen - #16636. Thanks @IgnazioGul!",
+      "[Fixed] Fix crash using Edit -> Copy menu when no text is selected in the diff - #16876",
+      "[Improved] Improve screen reader support of the \"Create Alias\" dialog - #16802",
+      "[Improved] Screen readers announce the number of results in filtered lists (like repositories, branches or pull requests) - #16779",
+      "[Improved] Screen readers announce expanded/collapsed state of dropdowns - #16781",
+      "[Improved] The context menu for a branches list items can be invoked by keyboard shortcuts - #16760",
+      "[Improved] The context menu for a repository list item can be invoked by keyboard shortcuts - #16758",
+      "[Improved] Make floating elements more responsive as the window or the UI are resized - #16717",
+      "[Improved] Adds committing avatar popover to see git configuration and ability to open git configuration settings - #16640",
+      "[Improved] Password inputs have a visibility toggle.  - #16714",
+      "[Improved] Welcome flow screen change in context is announced - #16698",
+      "[Improved] Focus the sign in with browser button on opening the enterprise server login screen - #16706",
+      "[Improved] Show the remote branch name if it does not match the local branch name - #13591. Thanks @samuelko123!",
+      "[Improved] Reduce retries of avatars that fail to load - #16592"
+    ],
+    "3.2.4": [
+      "[Fixed] The misattributed commit avatar popover no longer causes the changes list to have scrollbars - #16684",
+      "[Fixed] Autocompletion list is always visible regardless of its position on the screen - #16609, #16650",
+      "[Fixed] Close Squash Commit Message dialog on squash start - #16605",
+      "[Fixed] Multi-commit diffing produces the same results whether you select up to down or down to up - #15883",
+      "[Removed] Remove support for Windows 7, 8, and 8.1 - #16566"
+    ],
+    "3.2.4-beta1": [
+      "[Fixed] Entering in double forward slash does not  target directory in cloning dialog - #15842. Thanks @IgnazioGul!",
+      "[Fixed] In the \"No Repositories\" screen, controls at the bottom stay inside window when it is resized - #16502. Thanks @samuelko123!",
+      "[Fixed] Link to editor settings on the tutorial screen - #16636. Thanks @IgnazioGul!",
+      "[Fixed] Close Squash Commit Message dialog on squash start - #16605",
+      "[Fixed] Multi-commit diffing produces the same results whether you select up to down or down to up - #15883",
+      "[Fixed] The misattributed commit avatar popover no longer causes the changes list to have scrollbars - #16684",
+      "[Fixed] Autocompletion list is always visible regardless of its position on the screen - #16650 #16609",
+      "[Improved] Improve screen reader support of the \"Create Alias\" dialog - #16802",
+      "[Improved] Screen readers announce the number of results in filtered lists (like repositories, branches or pull requests) - #16779",
+      "[Improved] Screen readers announce expanded/collapsed state of dropdowns - #16781",
+      "[Improved] The context menu for a branches list items can be invoked by keyboard shortcuts - #16760",
+      "[Improved] The context menu for a repository list item can be invoked by keyboard shortcuts - #16758",
+      "[Improved] Make floating elements more responsive as the window or the UI are resized - #16717",
+      "[Improved] Adds committing avatar popover to see git configuration and ability to open git configuration settings - #16640",
+      "[Improved] Password inputs have a visibility toggle.  - #16714",
+      "[Improved] Welcome flow screen change in context is announced - #16698",
+      "[Improved] Focus the sign in with browser button on opening the enterprise server login screen - #16706",
+      "[Improved] Show the remote branch name if it does not match the local branch name - #13591. Thanks @samuelko123!",
+      "[Improved] Reduce retries of avatars that fail to load - #16592",
+      "[Removed] Remove support for Windows 7, 8, and 8.1 - #16566"
+    ],
+    "3.2.3": [
+      "[New] Add fetch and force-push actions in a dropdown as an alternative to the main Pull/Push/Publish action button - #15907",
+      "[New] Get notified when someone comments your pull requests - #16226",
+      "[Added] Add support for VimR code editor on macOS. - #16354. Thanks @Elmar-Wiese!",
+      "[Fixed] Preview pull request button in the no local changes suggested next action isn't intermittently disabled - #16368",
+      "[Fixed] NVDA reads number of suggestions when an autocompletion list shows up - #16526",
+      "[Fixed] The undo commit confirmation modal message is screen reader announced - #16472",
+      "[Fixed] Clipping and overlapping of the changes list is fixed at 200% zoom - #16425",
+      "[Fixed] The commit message avatar is now a toggle tip making the commit author details keyboard accessible - #16272",
+      "[Fixed] The commit length hint is keyboard and screen reader accessible - #16449",
+      "[Fixed] The changes list header checkbox tooltip description is announced by screen readers - #16457",
+      "[Fixed] The changes list header checkbox tooltip is keyboard accessible - #16487",
+      "[Fixed] Announce a file's state of inclusion in the commit on the changes list - #16420",
+      "[Fixed] Display focus ring around focused control after dismissing a dialog - #16528",
+      "[Improved] Add icons for tabs in Repository settings dialog - #16432. Thanks @sweezyio!",
+      "[Improved] Use correct name for VSCodium editor - #16511. Thanks @GitMensch!",
+      "[Improved] Styling improvements on Linux to scroll bars and default layouts - #16484. Thanks @shiftkey!",
+      "[Improved] Include remote branches in search for default branch - #15754",
+      "[Improved] Identify the changes list and history commit list as the changes and history tab panels for screen readers - #16463",
+      "[Improved] Windows title bar controls do not interrupt screen readers in browse mode - #16483",
+      "[Improved] Make radio theme selection look like radio buttons. - #16525",
+      "[Improved] Improve accessibility of GitHub Enterprise login flow - #16567",
+      "[Improved] Screen readers announce sign in errors - #16556"
+    ],
+    "3.2.2": ["[Improved] Upgrade embedded Git to 2.39.3"],
+    "3.2.2-beta2": [
+      "[Improved] Improve accessibility of GitHub Enterprise login flow - #16567",
+      "[Improved] Screen readers announce sign in errors - #16556",
+      "[Improved] Include remote branches in search for default branch - #15754",
+      "[Improved] Upgrade embedded Git to 2.39.3",
+      "[Removed] Remove unshipped high contrast theme and dependencies - #16559"
+    ],
+    "3.2.2-beta1": [
+      "[Added] Add support for VimR code editor on macOS. - #16354. Thanks @Elmar-Wiese!",
+      "[Fixed] NVDA reads number of suggestions when an autocompletion list shows up - #16526",
+      "[Fixed] The undo commit confirmation modal message is screen reader announced - #16472",
+      "[Fixed] Clipping and overlapping of the changes list is fixed at 200% zoom - #16425",
+      "[Fixed] Preview pull request button in the no local changes suggested next action isn't intermittently disabled - #16368",
+      "[Fixed] The commit message avatar is now a toggle tip making the commit author details keyboard accessible - #16272",
+      "[Fixed] The commit length hint is keyboard and screen reader accessible - #16449",
+      "[Fixed] The changes list header checkbox tooltip description is announced by screen readers - #16457",
+      "[Fixed] The changes list header checkbox tooltip is keyboard accessible - #16487",
+      "[Fixed] Announce a file's state of inclusion in the commit on the changes list - #16420",
+      "[Fixed] Display focus ring around focused control after dismissing a dialog - #16528",
+      "[Improved] Identify the changes list and history commit list as the changes and history tab panels for screen readers - #16463",
+      "[Improved] Windows title bar controls do not interrupt screen readers in browse mode - #16483",
+      "[Improved] Add icons for tabs in Repository settings dialog - #16432. Thanks @sweezyio!",
+      "[Improved] Use correct name for VSCodium editor - #16511. Thanks @GitMensch!",
+      "[Improved] Styling improvements on Linux to scroll bars and default layouts - #16484. Thanks @shiftkey!",
+      "[Improved] Make radio theme selection look like radio buttons. - #16525"
+    ],
+    "3.2.1": [
+      "[Added] Add Zed as an external editor option - #16026. Thanks @JosephTLyons!",
+      "[Added] Add support for Pulsar code editor on macOS. - #16220. Thanks @mdibella-dev!",
+      "[Fixed] Misattributed warning is announced in 'Git' preferences/options by screen readers - #16239",
+      "[Fixed] Remove check for update error modal when no internet connection or computer has been asleep - #16057",
+      "[Fixed] Update diff after adding or removing trailing newlines to a file - #15638",
+      "[Fixed] The Preferences/Options dialog content is still visible when zoomed - #16317",
+      "[Fixed] Up/down arrow can be used to navigate autocomplete lists like emoji again - #16044",
+      "[Fixed] Large diff messaging styled consistently in pull request preview - #16238",
+      "[Fixed] Fix support of newer versions of RStudio - #16339",
+      "[Improved] Show repositories available for cloning as they're received for users with access to lots of repositories - #16276 #8955 #2770",
+      "[Improved] Update preferences dialog to maintain a consistent size when switching between tabs - #16313",
+      "[Improved] Focus history and changes list when accessed via keyboard shortcut or menu - #16360",
+      "[Improved] On Windows, app level menu bar and menu items are announced by screen readers - #16315",
+      "[Improved] Keyboard shortcuts for resizing app sidebar and file lists - #16332",
+      "[Improved] Misattributed commit popover does not clip when app is zoomed - #16407",
+      "[Improved] Accessibility improvements for the co-authors input - #16335",
+      "[Improved] Commit completion status is announced by screen readers - #16371, #16340",
+      "[Improved] Improve accessibility of dialogs for screen reader users - #16350",
+      "[Improved] Accessibility improvements for autocompletion suggestions - #16324",
+      "[Improved] Learn more links are descriptive for screen readers - #16274",
+      "[Improved] Popover titles are announced by screen readers - #16270",
+      "[Improved] Show offset focus ring for buttons, vertical tabs etc - #16288",
+      "[Improved] Application main menu on Windows doesn't clip when zoom is set to 200% - #16290",
+      "[Improved] Button and text box contrast bumps - #16287",
+      "[Improved] Other email input in \"Git\" preferences/Options and misattributed popover email select have a screen readable label - #16240",
+      "[Improved] Add/remove co-authors button is now keyboard accessible - #16200"
+    ],
+    "3.2.1-beta3": [
+      "[Fixed] Add Zed as an external editor option - #16026. Thanks @JosephTLyons!",
+      "[Improved] Show repositories available for cloning as they're received for users with access to lots of repositories - #16276 #8955 #2770",
+      "[Improved] Users can resize the app sidebar via keyboard shortcuts - #16332",
+      "[Improved] Misattributed commit popover does not clip when app is zoomed - #16407",
+      "[Improved] Make co-authors input text accessible - #16335",
+      "[Improved] Commit completion status is announced by screen readers - #16371",
+      "[Improved] Windows menu scroll bars only present when menu is scrollable - #16367",
+      "[Improved] Committing status after submitting a commit is screen reader announced - #16340"
+    ],
+    "3.2.1-beta2": [
+      "[Added] Add support for Pulsar code editor on macOS. - #16220. Thanks @mdibella-dev!",
+      "[Fixed] Fix support of newer versions of RStudio - #16339",
+      "[Fixed] On Windows, app level menu bar and menu items are announced by screen readers - #16315",
+      "[Fixed] Misattributed warning is announced in 'Git' preferences/options by screen readers - #16239",
+      "[Fixed] Remove check for update error modal when no internet connection or computer has been asleep - #16057",
+      "[Fixed] Update diff after adding or removing trailing newlines to a file - #15638",
+      "[Fixed] The Preferences/Options dialog content is still visible when zoomed - #16317",
+      "[Fixed] Focus history and changes list when accessed via keyboard shortcut or menu - #16360",
+      "[Improved] Improve accessibility of dialogs for screen reader users - #16350",
+      "[Improved] Make autocompletion suggestions more accessible for screen readers - #16324",
+      "[Improved] Preference dialog height doesn't change much between sections - #16313",
+      "[Improved] Learn more links are descriptive for screen readers - #16274",
+      "[Improved] Popover titles are announced by screen readers - #16270",
+      "[Improved] Add offset focus ring for buttons, vertical tabs etc - #16288",
+      "[Improved] Windows app main menu's do not clip when zoom is set to 200% - #16290",
+      "[Improved] Button and text box contrast bumps - #16287"
+    ],
+    "3.2.1-beta1": [
+      "[New] Get notified when someone comments your pull requests - #16226",
+      "[Fixed] Up/down arrow can be used to navigate autocomplete lists like emoji again - #16044",
+      "[Fixed] Large diff messaging styled consistently in pull request preview - #16238",
+      "[Improved] Other email input in \"Git\" preferences/Options and misattributed popover email select have a screen readable label - #16240",
+      "[Improved] Make the add/remove co-authors button keyboard accessible - #16200"
+    ],
+    "3.2.0": [
+      "[New] Preview your pull request - view a diff of changes in your current branch.",
+      "[Added] Add Tabby terminal integration for macOS - #16040. Thanks @ansidev!",
+      "[Added] Add JetBrains DataSpell support - #16020. Thanks @tsvetilian-ty and @jm-rivera!",
+      "[Added] Editors installed with JetBrains Toolbox supported on Linux - #16029. Thanks @adil192!",
+      "[Added] Support for numerous additional editors on Linux - #16030. Thanks @shiftkey!",
+      "[Fixed] Include renamed files in the commit summary changed files tooltip - #15155. Thanks @haykam821!",
+      "[Improved] The context menu for a file in the changed files list can be invoked by keyboard shortcuts - #16114",
+      "[Improved] The file status of a changed file is announced by screen readers - #16098",
+      "[Improved] The changes list announces file selection position with screen readers - #16108",
+      "[Improved] The 'x' close button on dialogs is keyboard accessible - #16110",
+      "[Improved] Focus on first suitable child in sign in flow - #16125",
+      "[Improved] The misattributed warning popover is accessible through keyboard navigation - #16100"
+    ],
+    "3.1.9-beta2": ["[Fixed] Fixed production build startup crash - #16191"],
+    "3.1.9-beta1": [
+      "[Added] Add Tabby terminal integration for macOS - #16040. Thanks @ansidev!",
+      "[Added] Add JetBrains DataSpell support on Windows - #16020. Thanks @tsvetilian-ty!",
+      "[Added] Add JetBrains DataSpell support on macOS- #16020. Thanks @jm-rivera!",
+      "[Added] Editors installed with JetBrains Toolbox supported on Linux - #16029. Thanks @adil192!",
+      "[Added] Support for numerous additional editors on Linux - #16030. Thanks @shiftkey!",
+      "[Fixed] Include renamed files in the commit summary changed files tooltip - #15155. Thanks @haykam821!",
+      "[Improved] The context menu for a file in the changed files list can be invoked by keyboard shortcuts - #16114",
+      "[Improved] The file status of a changed file is announced with voice over - #16098",
+      "[Improved] The changes list announces file selection position with voice over - #16108",
+      "[Improved] The 'x' close button on dialogs is keyboard accessible - #16110",
+      "[Improved] Focus on first suitable child in sign in flow - #16125",
+      "[Improved] The misattributed warning popover is accessible through keyboard navigation - #16100"
+    ],
+    "3.1.8": [
+      "[Added] Add JetBrains CLion support on macOS - #15881. Thanks @tsvetilian-ty!",
+      "[Fixed] Fix crash launching the app on Apple silicon devices - #16011",
+      "[Fixed] Trim leading and trailing whitespace in URLs of repository remotes - #15821. Thanks @Shivareddy-Aluri!",
+      "[Fixed] Fix support for the latest versions of RStudio on Windows - #15810",
+      "[Fixed] Fix support for latest versions of VSCodium on Windows - #15585. Thanks @voidei!"
+    ],
+    "3.1.7": ["[Improved] Upgrade embedded Git to 2.39.2"],
+    "3.1.7-beta1": ["[Improved] Upgrade embedded Git to 2.39.2"],
+    "3.1.6": [
+      "[Improved] Upgrade embedded Git to 2.39.1 and Git LFS to 3.3.0 - #15915"
+    ],
+    "3.1.6-beta2": [
+      "[Fixed] Fix crash launching the app on Apple silicon devices - #16011",
+      "[Fixed] Trim leading and trailing whitespaces in URLs of repository remotes - #15821. Thanks @Shivareddy-Aluri!",
+      "[Fixed] Fix support for the latest versions of RStudio on Windows - #15810"
+    ],
+    "3.1.6-beta1": [
+      "[Added] Add fetch and force-push actions in a dropdown as an alternative to the main Pull/Push/Publish action button - #15907",
+      "[Added] Add JetBrains CLion support on macOS - #15881. Thanks @tsvetilian-ty!",
+      "[Fixed] Fix support for latest versions of VSCodium on Windows - #15585. Thanks @voidei!",
+      "[Improved] Upgrade to Electron v22.0.3 - #15831",
+      "[Improved] Upgrade embedded Git to 2.39.1 and Git LFS to 3.3.0 - #15915"
+    ],
+    "3.1.5": [
+      "[Added] Enable menu option to Force-push branches that have diverged - #15211",
+      "[Added] Add menu option to Fetch the current repository at any time - #7805",
+      "[Added] Add support for JetBrains Toolbox and JetBrains Fleet editor for Windows - #12912. Thanks @tsvetilian-ty!",
+      "[Added] Add support for Emacs editor for Linux - #15857. Thanks @zipperer!",
+      "[Added] Add Jetbrains PhpStorm and WebStorm Editors for Linux - #15375. Thanks @patinthehat!",
+      "[Added] Support VSCodium as an external editor - #15348. Thanks @daniel-ciaglia!",
+      "[Fixed] Hide window instead of hiding the app on macOS - #15511. Thanks @angusdev!",
+      "[Fixed] Only left mouse clicks invoke dragging in the commit list - #15313",
+      "[Fixed] Selected list items stay selected when scrolling - #2957",
+      "[Fixed] Stick to one tooltip at a time in the repository list  - #15583",
+      "[Fixed] Notifications of Pull Request reviews are displayed for forked repositories - #15580",
+      "[Fixed] Notifications when checks of a Pull Request fail are displayed for forked repositories - #15422",
+      "[Fixed] Prevent closing GitHub Desktop while it's being updated - #7055, #5197",
+      "[Fixed] Notifications are shown only when they are relevant to the current repository - #15487",
+      "[Fixed] The repository change indicator is visible if repository list item is selected and in focus - #7651. Thanks @angusdev!",
+      "[Fixed] Tooltips are positioned properly if mouse is not moved - #13636. Thanks @angusdev!",
+      "[Fixed] Tooltips of long commit author emails wrap to multiple lines - #15424. Thanks @angusdev!",
+      "[Fixed] Clone repository progress bar no longer hidden by repository list - #11953. Thanks @angusdev!",
+      "[Improved] Ability to copy tag names from the commit list - #15137. Thanks @Shivareddy-Aluri!",
+      "[Improved] The dropdown selection component is keyboard navigable - #15620",
+      "[Improved] The diff view now highlights Arduino's `.ino` files as C++ source - #15555. Thanks @j-f1!",
+      "[Improved] Close repository list after creating or adding repositories - #15508. Thanks @angusdev!",
+      "[Improved] Always show an error message when an update fails - #15530"
+    ],
+    "3.1.4": ["[Improved] Upgrade embedded Git to 2.35.6"],
+    "3.1.4-beta1": [
+      "[Added] Add support for JetBrains Toolbox and JetBrains Fleet editor for Windows - #12912. Thanks @tsvetilian-ty!",
+      "[Added] Add support for Emacs editor for Linux - #15857. Thanks @zipperer!",
+      "[Added] Add Jetbrains PhpStorm and WebStorm Editors for Linux - #15375. Thanks @patinthehat!",
+      "[Improved] Pull request preview dialog only uses remote branches for base branch options - #15768",
+      "[Improved] Upgrade embedded Git to 2.35.6"
+    ],
+    "3.1.3": [
+      "[Fixed] Disable reorder, squashing, cherry-picking while an action of this type is in progress. - #15468",
+      "[Fixed] Using the key command of 'Shift' + 'ArrowDown' adds the next commit below the current selection to the selection - #15549",
+      "[Fixed] Close 'Resolve conflicts before Rebase' dialog will not disable menu items - #13081. Thanks @angusdev!",
+      "[Fixed] Fix commit shortcut (Ctrl/Cmd + Enter) while amending a commit - #15445"
+    ],
+    "3.1.3-beta4": [
+      "[Fixed] Hide window instead of hiding the app on macOS - #15511. Thanks @angusdev!",
+      "[Fixed] Only left mouse clicks invoke dragging in the commit list - #15313",
+      "[Fixed] Ensure selected list items stay selected when scrolling - #2957",
+      "[Fixed] Stick to one tooltip at a time in the repository list  - #15583",
+      "[Fixed] Preview Pull Request opens when there is not a local default branch - #15704",
+      "[Fixed] Preview Pull Request suggested next action available on first app open without interaction - #15703",
+      "[Improved] Ability to copy tag names from the commit list - #15137. Thanks @Shivareddy-Aluri!",
+      "[Improved] Stacked popups remember their state when hidden due to another popup opening - #15668",
+      "[Improved] Create pull request from pull request preview opens to compare against the user's selected base branch - #15706",
+      "[Improved] On Preview Pull Request dialog, submit button closes the dialog - #15695"
+    ],
     "3.1.3-beta3": [
       "[Fixed] Using the key command of 'Shift' + 'ArrowDown' in the commit list adds the next commit to the current selection - #15536",
       "[Fixed] Notifications of Pull Request reviews are displayed for forked repositories - #15580",

@@ -2,6 +2,9 @@ import * as React from 'react'
 import { IAutocompletionProvider } from './index'
 import { compare } from '../../lib/compare'
 import { DefaultMaxHits } from './common'
+import { Emoji } from '../../lib/emoji'
+
+const sanitizeEmoji = (emoji: string) => emoji.replaceAll(':', '')
 
 /**
  * Interface describing a autocomplete match for the given search
@@ -9,7 +12,14 @@ import { DefaultMaxHits } from './common'
  */
 export interface IEmojiHit {
   /** A human-readable markdown representation of the emoji, ex :heart: */
-  readonly emoji: string
+  readonly title: string
+
+  /**
+   * The unicode string of the emoji if emoji is part of
+   * the unicode specification. If missing this emoji is
+   * a GitHub custom emoji such as :shipit:
+   */
+  readonly emoji?: string
 
   /**
    * The offset into the emoji string where the
@@ -31,10 +41,10 @@ export class EmojiAutocompletionProvider
 {
   public readonly kind = 'emoji'
 
-  private readonly emoji: Map<string, string>
+  private readonly allEmoji: Map<string, Emoji>
 
-  public constructor(emoji: Map<string, string>) {
-    this.emoji = emoji
+  public constructor(emoji: Map<string, Emoji>) {
+    this.allEmoji = emoji
   }
 
   public getRegExp(): RegExp {
@@ -49,18 +59,28 @@ export class EmojiAutocompletionProvider
     // when the user types a ':'. We want to open the popup
     // with suggestions as fast as possible.
     if (text.length === 0) {
-      return [...this.emoji.keys()]
-        .map(emoji => ({ emoji, matchStart: 0, matchLength: 0 }))
+      return [...this.allEmoji.entries()]
+        .map(([title, { emoji }]) => ({
+          title,
+          emoji,
+          matchStart: 0,
+          matchLength: 0,
+        }))
         .slice(0, maxHits)
     }
 
     const results = new Array<IEmojiHit>()
     const needle = text.toLowerCase()
 
-    for (const emoji of this.emoji.keys()) {
-      const index = emoji.indexOf(needle)
+    for (const [key, emoji] of this.allEmoji.entries()) {
+      const index = key.indexOf(needle)
       if (index !== -1) {
-        results.push({ emoji, matchStart: index, matchLength: needle.length })
+        results.push({
+          title: key,
+          emoji: emoji.emoji,
+          matchStart: index,
+          matchLength: needle.length,
+        })
       }
     }
 
@@ -79,42 +99,63 @@ export class EmojiAutocompletionProvider
       .sort(
         (x, y) =>
           compare(x.matchStart, y.matchStart) ||
-          compare(x.emoji.length, y.emoji.length) ||
-          compare(x.emoji, y.emoji)
+          compare(x.title.length, y.title.length) ||
+          compare(x.title, y.title)
       )
       .slice(0, maxHits)
   }
 
+  public getItemAriaLabel(hit: IEmojiHit): string {
+    const emoji = this.allEmoji.get(hit.title)
+    const sanitizedEmoji = sanitizeEmoji(hit.title)
+    const emojiDescription = emoji?.emoji
+      ? emoji.emoji
+      : emoji?.description ?? sanitizedEmoji
+    return emojiDescription === sanitizedEmoji
+      ? emojiDescription
+      : `${emojiDescription}, ${sanitizedEmoji}`
+  }
+
   public renderItem(hit: IEmojiHit) {
-    const emoji = hit.emoji
+    const emoji = this.allEmoji.get(hit.title)
 
     return (
-      <div className="emoji" key={emoji}>
-        <img className="icon" src={this.emoji.get(emoji)} alt={emoji} />
+      <div className="emoji" key={hit.title}>
+        {emoji?.emoji ? (
+          <div className="icon">{emoji?.emoji}</div>
+        ) : (
+          <img
+            className="icon"
+            src={emoji?.url}
+            alt={emoji?.description ?? hit.title}
+          />
+        )}
         {this.renderHighlightedTitle(hit)}
       </div>
     )
   }
 
   private renderHighlightedTitle(hit: IEmojiHit) {
-    const emoji = hit.emoji
+    const emoji = sanitizeEmoji(hit.title)
 
     if (!hit.matchLength) {
       return <div className="title">{emoji}</div>
     }
 
+    // Offset the match start by one to account for the leading ':' that was
+    // removed from the emoji string
+    const matchStart = hit.matchStart - 1
+
     return (
       <div className="title">
-        {emoji.substring(0, hit.matchStart)}
-        <mark>
-          {emoji.substring(hit.matchStart, hit.matchStart + hit.matchLength)}
-        </mark>
-        {emoji.substring(hit.matchStart + hit.matchLength)}
+        {emoji.substring(0, matchStart)}
+        <mark>{emoji.substring(matchStart, matchStart + hit.matchLength)}</mark>
+        {emoji.substring(matchStart + hit.matchLength)}
       </div>
     )
   }
 
   public getCompletionText(item: IEmojiHit) {
-    return item.emoji
+    return item.emoji ?? item.title
   }
 }

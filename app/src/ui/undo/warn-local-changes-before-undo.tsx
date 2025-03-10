@@ -49,6 +49,8 @@ export class WarnLocalChangesBeforeUndo extends React.Component<
         disabled={this.state.isLoading}
         onSubmit={this.onSubmit}
         onDismissed={this.props.onDismissed}
+        role="alertdialog"
+        ariaDescribedBy="undo-warning-message"
       >
         {this.getWarningDialog()}
         <DialogFooter>
@@ -64,7 +66,7 @@ export class WarnLocalChangesBeforeUndo extends React.Component<
     }
     return (
       <DialogContent>
-        <Row>
+        <Row id="undo-warning-message">
           You have changes in progress. Undoing the commit might result in some
           of these changes being lost. Do you want to continue anyway?
         </Row>
@@ -87,27 +89,19 @@ export class WarnLocalChangesBeforeUndo extends React.Component<
     if (this.props.isWorkingDirectoryClean) {
       return (
         <DialogContent>
-          <Row>
-            {this.getMergeCommitUndoWarningText()}
-            <br />
-            <br />
-            Do you want to continue anyway?
-          </Row>
+          <p>{this.getMergeCommitUndoWarningText()}</p>
+          <p>Do you want to continue anyway?</p>
         </DialogContent>
       )
     }
     return (
       <DialogContent>
-        <Row>
+        <p>
           You have changes in progress. Undoing the merge commit might result in
           some of these changes being lost.
-          <br />
-          <br />
-          {this.getMergeCommitUndoWarningText()}
-          <br />
-          <br />
-          Do you want to continue anyway?
-        </Row>
+        </p>
+        <p>{this.getMergeCommitUndoWarningText()}</p>
+        <p>Do you want to continue anyway?</p>
       </DialogContent>
     )
   }

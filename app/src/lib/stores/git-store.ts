@@ -30,7 +30,6 @@ import {
   ErrorWithMetadata,
   IErrorMetadata,
 } from '../error-with-metadata'
-import { compare } from '../../lib/compare'
 import { queueWorkHigh } from '../../lib/queue-work'
 
 import {
@@ -87,10 +86,9 @@ import {
   UpstreamRemoteName,
 } from './helpers/find-upstream-remote'
 import { findDefaultRemote } from './helpers/find-default-remote'
-import { IAuthor } from '../../models/author'
+import { Author, isKnownAuthor } from '../../models/author'
 import { formatCommitMessage } from '../format-commit-message'
 import { GitAuthor } from '../../models/git-author'
-import { IGitAccount } from '../../models/git-account'
 import { BaseStore } from './base-store'
 import { getStashes, getStashedFiles } from '../git/stash'
 import { IStashEntry, StashedChangesLoadStates } from '../../models/stash-entry'
@@ -101,6 +99,7 @@ import { DiffSelection, ITextDiff } from '../../models/diff'
 import { getDefaultBranch } from '../helpers/default-branch'
 import { stat } from 'fs/promises'
 import { findForkedRemotesToPrune } from './helpers/find-forked-remotes-to-prune'
+import { findDefaultBranch } from '../find-default-branch'
 
 /** The number of commits to load from history per batch. */
 const CommitBatchSize = 100
@@ -139,11 +138,13 @@ export class GitStore extends BaseStore {
 
   private _showCoAuthoredBy: boolean = false
 
-  private _coAuthors: ReadonlyArray<IAuthor> = []
+  private _coAuthors: ReadonlyArray<Author> = []
 
   private _aheadBehind: IAheadBehind | null = null
 
   private _tagsToPush: ReadonlyArray<string> = []
+
+  private _remotes: ReadonlyArray<IRemote> = []
 
   private _defaultRemote: IRemote | null = null
 
@@ -349,7 +350,7 @@ export class GitStore extends BaseStore {
     await this.refreshTags()
     this.addTagToPush(name)
 
-    this.statsStore.recordTagCreatedInDesktop()
+    this.statsStore.increment('tagsCreatedInDesktop')
   }
 
   public async deleteTag(name: string) {
@@ -365,7 +366,7 @@ export class GitStore extends BaseStore {
     await this.refreshTags()
     this.removeTagToPush(name)
 
-    this.statsStore.recordTagDeleted()
+    this.statsStore.increment('tagsDeleted')
   }
 
   /** The list of ordered SHAs. */
@@ -467,21 +468,12 @@ export class GitStore extends BaseStore {
     }
   }
 
-  private async refreshDefaultBranch() {
-    const defaultBranchName = await this.resolveDefaultBranch()
-
-    // Find the default branch among all of our branches, giving
-    // priority to local branches by sorting them before remotes
-    this._defaultBranch =
-      this._allBranches
-        .filter(
-          b =>
-            (b.name === defaultBranchName &&
-              b.upstreamWithoutRemote === null) ||
-            b.upstreamWithoutRemote === defaultBranchName
-        )
-        .sort((x, y) => compare(x.type, y.type))
-        .shift() || null
+  public async refreshDefaultBranch() {
+    this._defaultBranch = await findDefaultBranch(
+      this.repository,
+      this.allBranches,
+      this.defaultRemote?.name
+    )
 
     // The upstream default branch is only relevant for forked GitHub repos when
     // the fork behavior is contributing to the parent.
@@ -496,7 +488,7 @@ export class GitStore extends BaseStore {
 
     const upstreamDefaultBranch =
       (await getRemoteHEAD(this.repository, UpstreamRemoteName)) ??
-      defaultBranchName
+      getDefaultBranch()
 
     this._upstreamDefaultBranch =
       this._allBranches.find(
@@ -504,7 +496,7 @@ export class GitStore extends BaseStore {
           b.type === BranchType.Remote &&
           b.remoteName === UpstreamRemoteName &&
           b.nameWithoutRemote === upstreamDefaultBranch
-      ) || null
+      ) ?? null
   }
 
   private addTagToPush(tagName: string) {
@@ -528,28 +520,6 @@ export class GitStore extends BaseStore {
 
     storeTagsToPush(this.repository, this._tagsToPush)
     this.emitUpdate()
-  }
-
-  /**
-   * Resolve the default branch name for the current repository,
-   * using the available API data, remote information or branch
-   * name conventions.
-   */
-  private async resolveDefaultBranch(): Promise<string> {
-    if (this.currentRemote !== null) {
-      // the Git server should use [remote]/HEAD to advertise
-      // it's default branch, so see if it exists and matches
-      // a valid branch on the remote and attempt to use that
-      const branchName = await getRemoteHEAD(
-        this.repository,
-        this.currentRemote.name
-      )
-      if (branchName !== null) {
-        return branchName
-      }
-    }
-
-    return getDefaultBranch()
   }
 
   private refreshRecentBranches(
@@ -735,6 +705,32 @@ export class GitStore extends BaseStore {
       return
     }
 
+    const coAuthorsRestored = await this.restoreCoAuthorsFromCommit(commit)
+    if (coAuthorsRestored) {
+      return
+    }
+
+    this._commitMessage = {
+      summary: commit.summary,
+      description: commit.body,
+    }
+    this.emitUpdate()
+  }
+
+  public async prepareToAmendCommit(commit: Commit) {
+    const coAuthorsRestored = await this.restoreCoAuthorsFromCommit(commit)
+    if (coAuthorsRestored) {
+      return
+    }
+
+    this._commitMessage = {
+      summary: commit.summary,
+      description: commit.body,
+    }
+    this.emitUpdate()
+  }
+
+  private async restoreCoAuthorsFromCommit(commit: Commit) {
     // Let's be safe about this since it's untried waters.
     // If we can restore co-authors then that's fantastic
     // but if we can't we shouldn't be throwing an error,
@@ -744,17 +740,14 @@ export class GitStore extends BaseStore {
       try {
         await this.loadCommitAndCoAuthors(commit)
         this.emitUpdate()
-        return
+
+        return true
       } catch (e) {
         log.error('Failed to restore commit and co-authors, falling back', e)
       }
     }
 
-    this._commitMessage = {
-      summary: commit.summary,
-      description: commit.body,
-    }
-    this.emitUpdate()
+    return false
   }
 
   /**
@@ -867,7 +860,7 @@ export class GitStore extends BaseStore {
     const extractedAuthors = extractedTrailers.map(t =>
       GitAuthor.parse(t.value)
     )
-    const newAuthors = new Array<IAuthor>()
+    const newAuthors = new Array<Author>()
 
     // Last step, phew! The most likely scenario where we
     // get called is when someone has just made a commit and
@@ -884,10 +877,12 @@ export class GitStore extends BaseStore {
       }
 
       const { name, email } = extractedAuthor
-      const existing = this.coAuthors.find(
-        a => a.name === name && a.email === email && a.username !== null
+      const existing = this.coAuthors
+        .filter(isKnownAuthor)
+        .find(a => a.name === name && a.email === email && a.username !== null)
+      newAuthors.push(
+        existing || { kind: 'known', name, email, username: null }
       )
-      newAuthors.push(existing || { name, email, username: null })
     }
 
     this._coAuthors = newAuthors
@@ -940,7 +935,7 @@ export class GitStore extends BaseStore {
    * Gets a list of co-authors to use when crafting the next
    * commit.
    */
-  public get coAuthors(): ReadonlyArray<IAuthor> {
+  public get coAuthors(): ReadonlyArray<Author> {
     return this._coAuthors
   }
 
@@ -954,7 +949,6 @@ export class GitStore extends BaseStore {
    *                           the overall fetch progress.
    */
   public async fetch(
-    account: IGitAccount | null,
     backgroundTask: boolean,
     progressCallback?: (fetchProgress: IFetchProgress) => void
   ): Promise<void> {
@@ -980,7 +974,6 @@ export class GitStore extends BaseStore {
 
     if (remotes.size > 0) {
       await this.fetchRemotes(
-        account,
         [...remotes.values()],
         backgroundTask,
         progressCallback
@@ -1020,7 +1013,6 @@ export class GitStore extends BaseStore {
    *                           the overall fetch progress.
    */
   public async fetchRemotes(
-    account: IGitAccount | null,
     remotes: ReadonlyArray<IRemote>,
     backgroundTask: boolean,
     progressCallback?: (fetchProgress: IFetchProgress) => void
@@ -1035,7 +1027,7 @@ export class GitStore extends BaseStore {
       const remote = remotes[i]
       const startProgressValue = i * weight
 
-      await this.fetchRemote(account, remote, backgroundTask, progress => {
+      await this.fetchRemote(remote, backgroundTask, progress => {
         if (progress && progressCallback) {
           progressCallback({
             ...progress,
@@ -1056,21 +1048,36 @@ export class GitStore extends BaseStore {
    *                           the overall fetch progress.
    */
   public async fetchRemote(
-    account: IGitAccount | null,
     remote: IRemote,
     backgroundTask: boolean,
     progressCallback?: (fetchProgress: IFetchProgress) => void
   ): Promise<void> {
+    const repo = this.repository
     const retryAction: RetryAction = {
       type: RetryActionType.Fetch,
-      repository: this.repository,
+      repository: repo,
     }
-    await this.performFailableOperation(
-      () => fetchRepo(this.repository, account, remote, progressCallback),
+    const fetchSucceeded = await this.performFailableOperation(
+      async () => {
+        await fetchRepo(repo, remote, progressCallback, backgroundTask)
+        return true
+      },
       { backgroundTask, retryAction }
     )
 
-    await updateRemoteHEAD(this.repository, account, remote)
+    // If the pull failed we shouldn't try to update the remote HEAD
+    // because there's a decent chance that it failed either because we
+    // didn't have the correct credentials (which we won't this time
+    // either) or because there's a network error which likely will
+    // persist for the next operation as well.
+    if (fetchSucceeded) {
+      // Updating the local HEAD symref isn't critical so we don't want
+      // to show an error message to the user and have them retry the
+      // entire pull operation if it fails.
+      await updateRemoteHEAD(repo, remote, backgroundTask).catch(e =>
+        log.error('Failed updating remote HEAD', e)
+      )
+    }
   }
 
   /**
@@ -1080,18 +1087,14 @@ export class GitStore extends BaseStore {
    * @param refspec - The association between a remote and local ref to use as
    *                  part of this action. Refer to git-scm for more
    *                  information on refspecs: https://www.git-scm.com/book/tr/v2/Git-Internals-The-Refspec
-   *
    */
-  public async fetchRefspec(
-    account: IGitAccount | null,
-    refspec: string
-  ): Promise<void> {
+  public async fetchRefspec(refspec: string): Promise<void> {
     // TODO: we should favour origin here
     const remotes = await getRemotes(this.repository)
 
     for (const remote of remotes) {
       await this.performFailableOperation(() =>
-        fetchRefspec(this.repository, account, remote, refspec)
+        fetchRefspec(this.repository, remote, refspec)
       )
     }
   }
@@ -1200,6 +1203,10 @@ export class GitStore extends BaseStore {
       : null
   }
 
+  public get desktopStashEntries(): ReadonlyMap<string, IStashEntry> {
+    return this._desktopStashEntries
+  }
+
   /** The total number of stash entries */
   public get stashEntryCount(): number {
     return this._stashEntryCount
@@ -1254,6 +1261,7 @@ export class GitStore extends BaseStore {
 
   public async loadRemotes(): Promise<void> {
     const remotes = await getRemotes(this.repository)
+    this._remotes = remotes
     this._defaultRemote = findDefaultRemote(remotes)
 
     const currentRemoteName =
@@ -1355,6 +1363,11 @@ export class GitStore extends BaseStore {
     return this._aheadBehind
   }
 
+  /** The list of configured remotes for the repository */
+  public get remotes() {
+    return this._remotes
+  }
+
   /**
    * The remote considered to be the "default" remote in the repository.
    *
@@ -1405,7 +1418,7 @@ export class GitStore extends BaseStore {
    *
    * @param coAuthors  Zero or more authors
    */
-  public setCoAuthors(coAuthors: ReadonlyArray<IAuthor>) {
+  public setCoAuthors(coAuthors: ReadonlyArray<Author>) {
     this._coAuthors = coAuthors
     this.emitUpdate()
   }
@@ -1597,11 +1610,10 @@ export class GitStore extends BaseStore {
   public async revertCommit(
     repository: Repository,
     commit: Commit,
-    account: IGitAccount | null,
     progressCallback?: (fetchProgress: IRevertProgress) => void
   ): Promise<void> {
     await this.performFailableOperation(() =>
-      revertCommit(repository, commit, account, progressCallback)
+      revertCommit(repository, commit, this.currentRemote, progressCallback)
     )
 
     this.emitUpdate()

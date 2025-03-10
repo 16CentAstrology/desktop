@@ -3,56 +3,25 @@ import {
   ApplicationTheme,
   supportsSystemThemeChanges,
   getCurrentlyAppliedTheme,
-  ICustomTheme,
 } from '../lib/application-theme'
 import { Row } from '../lib/row'
 import { DialogContent } from '../dialog'
-import {
-  VerticalSegmentedControl,
-  ISegmentedItem,
-} from '../lib/vertical-segmented-control'
-import { CustomThemeSelector } from './custom-theme-selector'
-import { enableHighContrastTheme } from '../../lib/feature-flag'
+import { RadioGroup } from '../lib/radio-group'
+import { Select } from '../lib/select'
+import { encodePathAsUrl } from '../../lib/path'
+import { tabSizeDefault } from '../../lib/stores/app-store'
 
 interface IAppearanceProps {
   readonly selectedTheme: ApplicationTheme
-  readonly customTheme?: ICustomTheme
   readonly onSelectedThemeChanged: (theme: ApplicationTheme) => void
-  readonly onCustomThemeChanged: (theme: ICustomTheme) => void
+  readonly selectedTabSize: number
+  readonly onSelectedTabSizeChanged: (tabSize: number) => void
 }
 
 interface IAppearanceState {
   readonly selectedTheme: ApplicationTheme | null
+  readonly selectedTabSize: number
 }
-
-const systemTheme: ISegmentedItem<ApplicationTheme> = {
-  title: 'System',
-  description: 'Automatically switch theme to match system theme',
-  key: ApplicationTheme.System,
-}
-
-const themes: ReadonlyArray<ISegmentedItem<ApplicationTheme>> = [
-  {
-    title: 'Light',
-    description: 'The default theme of GitHub Desktop',
-    key: ApplicationTheme.Light,
-  },
-  {
-    title: 'Dark',
-    description: 'GitHub Desktop is for you too, creatures of the night',
-    key: ApplicationTheme.Dark,
-  },
-  ...(enableHighContrastTheme()
-    ? [
-        {
-          title: 'High Contrast',
-          description: 'Customizable High Contrast Theme',
-          key: ApplicationTheme.HighContrast,
-        },
-      ]
-    : []),
-  ...(supportsSystemThemeChanges() ? [systemTheme] : []),
-]
 
 export class Appearance extends React.Component<
   IAppearanceProps,
@@ -65,7 +34,10 @@ export class Appearance extends React.Component<
       props.selectedTheme !== ApplicationTheme.System ||
       supportsSystemThemeChanges()
 
-    this.state = { selectedTheme: usePropTheme ? props.selectedTheme : null }
+    this.state = {
+      selectedTheme: usePropTheme ? props.selectedTheme : null,
+      selectedTabSize: props.selectedTabSize,
+    }
 
     if (!usePropTheme) {
       this.initializeSelectedTheme()
@@ -73,7 +45,7 @@ export class Appearance extends React.Component<
   }
 
   public async componentDidUpdate(prevProps: IAppearanceProps) {
-    if (prevProps.selectedTheme === this.props.selectedTheme) {
+    if (prevProps === this.props) {
       return
     }
 
@@ -85,49 +57,120 @@ export class Appearance extends React.Component<
       ? this.props.selectedTheme
       : await getCurrentlyAppliedTheme()
 
-    this.setState({ selectedTheme })
+    const selectedTabSize = this.props.selectedTabSize
+
+    this.setState({ selectedTheme, selectedTabSize })
   }
 
   private initializeSelectedTheme = async () => {
     const selectedTheme = await getCurrentlyAppliedTheme()
-    this.setState({ selectedTheme })
+    const selectedTabSize = this.props.selectedTabSize
+    this.setState({ selectedTheme, selectedTabSize })
   }
 
   private onSelectedThemeChanged = (theme: ApplicationTheme) => {
     this.props.onSelectedThemeChanged(theme)
   }
 
-  private onCustomThemeChanged = (theme: ICustomTheme) => {
-    this.props.onCustomThemeChanged(theme)
+  private onSelectedTabSizeChanged = (
+    event: React.FormEvent<HTMLSelectElement>
+  ) => {
+    this.props.onSelectedTabSizeChanged(parseInt(event.currentTarget.value))
+  }
+
+  public renderThemeSwatch = (theme: ApplicationTheme) => {
+    const darkThemeImage = encodePathAsUrl(__dirname, 'static/ghd_dark.svg')
+    const lightThemeImage = encodePathAsUrl(__dirname, 'static/ghd_light.svg')
+
+    switch (theme) {
+      case ApplicationTheme.Light:
+        return (
+          <span>
+            <img src={lightThemeImage} alt="" />
+            <span className="theme-value-label">Light</span>
+          </span>
+        )
+      case ApplicationTheme.Dark:
+        return (
+          <span>
+            <img src={darkThemeImage} alt="" />
+            <span className="theme-value-label">Dark</span>
+          </span>
+        )
+      case ApplicationTheme.System:
+        /** Why three images? The system theme swatch uses the first image
+         * positioned relatively to get the label container size and uses the
+         * second and third positioned absolutely over first and third one
+         * clipped in half to render a split dark and light theme swatch. */
+        return (
+          <span>
+            <span className="system-theme-swatch">
+              <img src={lightThemeImage} alt="" />
+              <img src={lightThemeImage} alt="" />
+              <img src={darkThemeImage} alt="" />
+            </span>
+            <span className="theme-value-label">System</span>
+          </span>
+        )
+    }
+  }
+
+  private renderSelectedTheme() {
+    const selectedTheme = this.state.selectedTheme
+
+    if (selectedTheme == null) {
+      return <Row>Loading system theme</Row>
+    }
+
+    const themes = [
+      ApplicationTheme.Light,
+      ApplicationTheme.Dark,
+      ...(supportsSystemThemeChanges() ? [ApplicationTheme.System] : []),
+    ]
+
+    return (
+      <div className="appearance-section">
+        <h2 id="theme-heading">Theme</h2>
+
+        <RadioGroup<ApplicationTheme>
+          ariaLabelledBy="theme-heading"
+          className="theme-selector"
+          selectedKey={selectedTheme}
+          radioButtonKeys={themes}
+          onSelectionChanged={this.onSelectedThemeChanged}
+          renderRadioButtonLabelContents={this.renderThemeSwatch}
+        />
+      </div>
+    )
+  }
+
+  private renderSelectedTabSize() {
+    const availableTabSizes: number[] = [1, 2, 3, 4, 5, 6, 8, 10, 12]
+
+    return (
+      <div className="appearance-section">
+        <h2 id="diff-heading">{'Diff'}</h2>
+
+        <Select
+          value={this.state.selectedTabSize.toString()}
+          label={__DARWIN__ ? 'Tab Size' : 'Tab size'}
+          onChange={this.onSelectedTabSizeChanged}
+        >
+          {availableTabSizes.map(n => (
+            <option key={n} value={n}>
+              {n === tabSizeDefault ? `${n} (default)` : n}
+            </option>
+          ))}
+        </Select>
+      </div>
+    )
   }
 
   public render() {
-    const { selectedTheme } = this.state
-
-    if (selectedTheme == null) {
-      return (
-        <DialogContent>
-          <Row>Loading system theme</Row>
-        </DialogContent>
-      )
-    }
-
     return (
       <DialogContent>
-        <Row>
-          <VerticalSegmentedControl
-            items={themes}
-            selectedKey={selectedTheme}
-            onSelectionChanged={this.onSelectedThemeChanged}
-          />
-        </Row>
-        <Row>
-          <CustomThemeSelector
-            onCustomThemeChanged={this.onCustomThemeChanged}
-            selectedTheme={selectedTheme}
-            customTheme={this.props.customTheme}
-          />
-        </Row>
+        {this.renderSelectedTheme()}
+        {this.renderSelectedTabSize()}
       </DialogContent>
     )
   }

@@ -48,16 +48,14 @@
     border-bottom: var(--base-border);
   }
 
-  li {
-    padding: var(--spacing-double);
-  }
   summary {
     display: flex;
     align-items: center;
     font-weight: var(--font-weight-semibold);
+    padding: var(--spacing-double);
 
     .summary-text {
-      opacity: 0.5;
+      color: var(--text-secondary-color);
     }
     .hang-right {
       margin-left: auto;
@@ -85,6 +83,7 @@
 
   details .contents {
     padding-left: var(--spacing-triple);
+    padding-bottom: var(--spacing-double);
     .description {
       margin-bottom: var(--spacing);
     }
@@ -114,9 +113,9 @@
     }
   }
   details[open] summary {
-    margin-bottom: var(--spacing);
+    padding-bottom: var(--spacing);
     .summary-text {
-      opacity: 1;
+      color: var(--text-color);
     }
     // we only want to do this if its an (chevron) octicon
     .hang-right .octicon {

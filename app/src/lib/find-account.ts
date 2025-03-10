@@ -1,7 +1,7 @@
 import * as URL from 'url'
-import { getHTMLURL, API, getDotComAPIEndpoint } from './api'
+import { getHTMLURL, API } from './api'
 import { parseRemote, parseRepositoryIdentifier } from './remote-parsing'
-import { Account } from '../models/account'
+import { Account, isDotComAccount } from '../models/account'
 
 type RepositoryLookupFunc = (
   account: Account,
@@ -80,10 +80,10 @@ export async function findAccountForRemoteURL(
     // As this needs to be done efficiently, we consider endpoints not matching
     // `getDotComAPIEndpoint()` to be GitHub Enterprise accounts, and accounts
     // without a token to be unauthenticated.
-    const sortedAccounts = Array.from(allAccounts).sort((a1, a2) => {
-      if (a1.endpoint === getDotComAPIEndpoint()) {
+    const sortedAccounts = allAccounts.toSorted((a1, a2) => {
+      if (isDotComAccount(a1)) {
         return a1.token.length ? -1 : 1
-      } else if (a2.endpoint === getDotComAPIEndpoint()) {
+      } else if (isDotComAccount(a2)) {
         return a2.token.length ? 1 : -1
       } else {
         return 0

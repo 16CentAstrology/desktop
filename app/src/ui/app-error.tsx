@@ -7,14 +7,15 @@ import {
   DefaultDialogFooter,
 } from './dialog'
 import { dialogTransitionTimeout } from './app'
-import { GitError, isAuthFailureError } from '../lib/git/core'
+import { coerceToString, GitError, isAuthFailureError } from '../lib/git/core'
 import { Popup, PopupType } from '../models/popup'
 import { OkCancelButtonGroup } from './dialog/ok-cancel-button-group'
 import { ErrorWithMetadata } from '../lib/error-with-metadata'
 import { RetryActionType, RetryAction } from '../models/retry-actions'
 import { Ref } from './lib/ref'
-import memoizeOne from 'memoize-one'
-import { parseCarriageReturn } from '../lib/parse-carriage-return'
+import { GitError as DugiteError } from 'dugite'
+import { LinkButton } from './lib/link-button'
+import { getFileFromExceedsError } from '../lib/helpers/regex'
 
 interface IAppErrorProps {
   /** The error to be displayed  */
@@ -44,7 +45,6 @@ interface IAppErrorState {
  */
 export class AppError extends React.Component<IAppErrorProps, IAppErrorState> {
   private dialogContent: HTMLDivElement | null = null
-  private formatGitErrorMessage = memoizeOne(parseCarriageReturn)
 
   public constructor(props: IAppErrorProps) {
     super(props)
@@ -94,16 +94,50 @@ export class AppError extends React.Component<IAppErrorProps, IAppErrorState> {
     // If the error message is just the raw git output, display it in
     // fixed-width font
     if (isRawGitError(e)) {
-      const formattedMessage = this.formatGitErrorMessage(e.message)
-      return <p className="monospace">{formattedMessage}</p>
+      return <p className="monospace">{e.message}</p>
+    }
+
+    if (
+      isGitError(e) &&
+      e.result.gitError === DugiteError.PushWithFileSizeExceedingLimit
+    ) {
+      const files = getFileFromExceedsError(coerceToString(e.result.stderr))
+      return (
+        <>
+          <p>{error.message}</p>
+          {files.length > 0 && (
+            <>
+              <p>Files that exceed the limit</p>
+              <ul>
+                {files.map(file => (
+                  <li key={file}>{file}</li>
+                ))}
+              </ul>
+            </>
+          )}
+          <p>
+            See{' '}
+            <LinkButton uri="https://gh.io/lfs">https://gh.io/lfs</LinkButton>{' '}
+            for more information on managing large files on GitHub
+          </p>
+        </>
+      )
     }
 
     return <p>{e.message}</p>
   }
 
   private getTitle(error: Error) {
-    if (isCloneError(error)) {
-      return 'Clone failed'
+    switch (getDugiteError(error)) {
+      case DugiteError.PushWithFileSizeExceedingLimit:
+        return 'File size limit exceeded'
+    }
+
+    switch (getRetryActionType(error)) {
+      case RetryActionType.Clone:
+        return 'Clone failed'
+      case RetryActionType.Push:
+        return 'Failed to push'
     }
 
     return 'Error'
@@ -220,17 +254,21 @@ export class AppError extends React.Component<IAppErrorProps, IAppErrorState> {
         type="error"
         key="error"
         title={this.getTitle(error)}
-        dismissable={false}
+        backdropDismissable={false}
         onSubmit={this.props.onDismissed}
         onDismissed={this.props.onDismissed}
         disabled={this.state.disabled}
         className={
           isRawGitError(this.state.error) ? 'raw-git-error' : undefined
         }
+        role="alertdialog"
+        ariaDescribedBy="app-error-description"
       >
         <DialogContent onRef={this.onDialogContentRef}>
-          {this.renderErrorMessage(error)}
-          {this.renderContentAfterErrorMessage(error)}
+          <div id="app-error-description">
+            {this.renderErrorMessage(error)}
+            {this.renderContentAfterErrorMessage(error)}
+          </div>
         </DialogContent>
         {this.renderFooter(error)}
       </Dialog>
@@ -264,4 +302,17 @@ function isCloneError(error: Error) {
   }
   const { retryAction } = error.metadata
   return retryAction !== undefined && retryAction.type === RetryActionType.Clone
+}
+
+function getRetryActionType(error: Error) {
+  if (!isErrorWithMetaData(error)) {
+    return undefined
+  }
+
+  return error.metadata.retryAction?.type
+}
+
+function getDugiteError(error: Error) {
+  const e = getUnderlyingError(error)
+  return isGitError(e) ? e.result.gitError : undefined
 }

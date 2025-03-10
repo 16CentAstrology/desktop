@@ -8,17 +8,15 @@ import { shell } from '../../lib/app-shell'
 import { ReleaseNotesUri } from '../lib/releases'
 import { OkCancelButtonGroup } from '../dialog/ok-cancel-button-group'
 import { DesktopFakeRepository } from '../../lib/desktop-fake-repository'
-import {
-  ReleaseNoteHeaderLeftUri,
-  ReleaseNoteHeaderRightUri,
-} from '../../lib/release-notes'
 import { SandboxedMarkdown } from '../lib/sandboxed-markdown'
 import { Button } from '../lib/button'
+import { Emoji } from '../../lib/emoji'
 
 interface IReleaseNotesProps {
   readonly onDismissed: () => void
-  readonly emoji: Map<string, string>
+  readonly emoji: Map<string, Emoji>
   readonly newReleases: ReadonlyArray<ReleaseSummary>
+  readonly underlineLinks: boolean
 }
 
 /**
@@ -122,6 +120,8 @@ export class ReleaseNotes extends React.Component<IReleaseNotesProps, {}> {
         markdown={pretext[0].message}
         emoji={this.props.emoji}
         onMarkdownLinkClicked={this.onMarkdownLinkClicked}
+        underlineLinks={this.props.underlineLinks}
+        ariaLabel="Release notes generated from markdown"
       />
     )
   }
@@ -168,22 +168,10 @@ export class ReleaseNotes extends React.Component<IReleaseNotesProps, {}> {
         : this.drawSingleColumnLayout(release)
 
     const dialogHeader = (
-      <div className="release-notes-header">
-        <img
-          className="release-note-graphic-left"
-          src={ReleaseNoteHeaderLeftUri}
-          alt=""
-        />
-        <div className="title">
-          <p className="version">Version {latestVersion}</p>
-          <p className="date">{datePublished}</p>
-        </div>
-        <img
-          className="release-note-graphic-right"
-          src={ReleaseNoteHeaderRightUri}
-          alt=""
-        />
-      </div>
+      <>
+        <span className="version">Version {latestVersion}</span>
+        <span className="date">{datePublished}</span>
+      </>
     )
 
     return (
